@@ -25,7 +25,7 @@ Built as a single HTML file. Open it in any browser, add it to your home screen,
 - **Offline** — service worker caches the app after the first load
 - **Local storage** — all progress saved on-device, nothing sent anywhere
 - **Export / Import** — back up and restore progress as JSON
-- **Migrate from 100 Pushups (Google Play)** — import your existing progress via:
+- **Migrate from Push Ups Workout (Google Play)** — import your existing progress via:
   - Manual wizard — pick your current week and day
   - Direct `.puud` file import — reads the app's backup file format (ZIP containing SQLite + JSON preferences), parsed entirely in the browser
 
@@ -44,13 +44,13 @@ python3 -m http.server 8080
 # then open http://localhost:8080
 ```
 
-## Migrating from the 100 Pushups app
+## Migrating from the Push Ups Workout app
 
 1. In the old app: **Settings → Backup** — save the `.puud` file to your device
 2. In OpenPushups: **Settings → Import .puud Backup** — select the file
 3. Your full history and total rep count are imported automatically
 
-Alternatively use the manual wizard (**Settings → Migrate from 100 Pushups**) to set your current week/day without a backup file.
+Alternatively use the manual wizard (**Settings → Migrate from Push Ups Workout**) to set your current week/day without a backup file.
 
 ## Privacy
 
