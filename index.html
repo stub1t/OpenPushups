@@ -773,38 +773,36 @@
 // PROGRAM DATA  (6 weeks × 3 days)
 // Each day: { sets: number[], isLastMax: bool, lastMin: number, rest: seconds }
 // ═══════════════════════════════════════════════════
+const RING_CIRCUMFERENCE = 596.9; // 2π × 95 (SVG circle r=95)
+const WEEK_MIGRATION   = -1;      // synthetic entry: manual migration lump sum
+const WEEK_PUUD_IMPORT = -2;      // synthetic entry: imported from .puud backup
+
 const PROGRAM = [
-  // Week 1
   [
     { sets:[2,3,2,2], isLastMax:true, lastMin:3,  rest:60  },
     { sets:[3,4,2,3], isLastMax:true, lastMin:4,  rest:60  },
     { sets:[3,4,3,3], isLastMax:true, lastMin:5,  rest:60  },
   ],
-  // Week 2
   [
     { sets:[5,6,4,4], isLastMax:true, lastMin:5,  rest:90  },
     { sets:[6,8,4,4], isLastMax:true, lastMin:6,  rest:90  },
     { sets:[6,9,5,5], isLastMax:true, lastMin:7,  rest:90  },
   ],
-  // Week 3
   [
     { sets:[8,10,7,7],  isLastMax:true, lastMin:7,  rest:90  },
     { sets:[9,11,8,7],  isLastMax:true, lastMin:8,  rest:90  },
     { sets:[10,12,9,9], isLastMax:true, lastMin:9,  rest:120 },
   ],
-  // Week 4
   [
     { sets:[11,13,9,9],   isLastMax:true, lastMin:10, rest:120 },
     { sets:[12,14,11,10], isLastMax:true, lastMin:11, rest:120 },
     { sets:[14,16,12,12], isLastMax:true, lastMin:13, rest:120 },
   ],
-  // Week 5
   [
     { sets:[16,18,14,14], isLastMax:true, lastMin:15, rest:120 },
     { sets:[18,20,15,15], isLastMax:true, lastMin:16, rest:120 },
     { sets:[20,22,18,18], isLastMax:true, lastMin:18, rest:120 },
   ],
-  // Week 6
   [
     { sets:[22,25,20,20], isLastMax:true, lastMin:22, rest:120 },
     { sets:[25,28,22,22], isLastMax:true, lastMin:25, rest:120 },
@@ -945,19 +943,18 @@ function renderWorkoutUI() {
   const ring = document.getElementById('ring-fg');
   const repDisplay = document.getElementById('rep-display');
   const repLabel = document.getElementById('rep-label-text');
-  const circumference = 596.9;
 
   ring.classList.toggle('rest-mode', isRest);
 
   if (isRest) {
     const pct = wk.restRemaining / day.rest;
-    ring.style.strokeDashoffset = circumference * (1 - pct);
+    ring.style.strokeDashoffset = RING_CIRCUMFERENCE * (1 - pct);
     repDisplay.textContent = wk.restRemaining;
     repLabel.textContent = 'seconds';
   } else {
     const total = isMax ? wk.currentMaxReps : wk.sets[idx];
     const pct = total > 0 ? wk.repsRemaining / total : 0;
-    ring.style.strokeDashoffset = circumference * (1 - pct);
+    ring.style.strokeDashoffset = RING_CIRCUMFERENCE * (1 - pct);
     repDisplay.textContent = wk.repsRemaining;
     repLabel.textContent = wk.repsRemaining > 0 ? 'remaining' : 'done!';
   }
@@ -1032,8 +1029,7 @@ function startRestTimer() {
 function updateRestRing() {
   const day = PROGRAM[wk.weekIdx][wk.dayIdx];
   const pct = wk.restRemaining / day.rest;
-  const circumference = 596.9;
-  document.getElementById('ring-fg').style.strokeDashoffset = circumference * (1 - pct);
+  document.getElementById('ring-fg').style.strokeDashoffset = RING_CIRCUMFERENCE * (1 - pct);
   document.getElementById('rep-display').textContent = wk.restRemaining;
 }
 
@@ -1059,8 +1055,7 @@ function advanceSet() {
 function adjustReps(delta) {
   wk.currentMaxReps = Math.max(1, wk.currentMaxReps + delta);
   wk.repsRemaining  = wk.currentMaxReps;
-  const circumference = 596.9;
-  document.getElementById('ring-fg').style.strokeDashoffset = 0; // full ring at new target
+  document.getElementById('ring-fg').style.strokeDashoffset = 0;
   document.getElementById('rep-display').textContent = wk.repsRemaining;
   document.getElementById('rep-label-text').textContent = 'remaining';
   vibrate([10]);
@@ -1075,10 +1070,9 @@ function repTap() {
 
   const isMax = wk.sets[wk.currentSetIdx] === 'max';
   const total = isMax ? wk.currentMaxReps : wk.sets[wk.currentSetIdx];
-  const circumference = 596.9;
   const pct = total > 0 ? wk.repsRemaining / total : 0;
 
-  document.getElementById('ring-fg').style.strokeDashoffset = circumference * (1 - pct);
+  document.getElementById('ring-fg').style.strokeDashoffset = RING_CIRCUMFERENCE * (1 - pct);
   document.getElementById('rep-display').textContent = wk.repsRemaining;
   document.getElementById('rep-label-text').textContent = wk.repsRemaining > 0 ? 'remaining' : 'done!';
 
@@ -1218,7 +1212,7 @@ function renderSetsPreview() {
 
 function updateStatsUI() {
   const workouts = state.completedWorkouts;
-  const sessions = workouts.filter(w => w.week !== -1); // exclude migration entries
+  const sessions = workouts.filter(w => w.week !== WEEK_MIGRATION);
   const total = workouts.reduce((a,w) => a+w.total, 0);
   const best = sessions.reduce((a,w) => Math.max(a,w.total), 0);
   const avg  = sessions.length ? Math.round(sessions.reduce((a,w)=>a+w.total,0) / sessions.length) : 0;
@@ -1273,8 +1267,8 @@ function updateHistoryUI() {
   list.innerHTML = sorted.map(w => {
     const d = new Date(w.date);
     const ago = relativeTime(d);
-    const isMigLump   = w.week === -1;  // manual migration total
-    const isPuud      = w.week === -2;  // imported from .puud
+    const isMigLump = w.week === WEEK_MIGRATION;
+    const isPuud    = w.week === WEEK_PUUD_IMPORT;
     const isSpecial   = isMigLump || isPuud;
     return `<div class="history-item">
       <div class="hi-dot" style="${isSpecial ? 'background:var(--accent);font-size:11px' : ''}">
@@ -1307,8 +1301,7 @@ function updateSettingsUI() {
 // HELPERS
 // ═══════════════════════════════════════════════════
 function isWorkoutDone(w, d) {
-  // A session counts as done if it's in history OR it's before the current position
-  // (the latter covers migrated progress where we don't have real history entries)
+  // covers migrated progress where earlier sessions have no history entries
   if (state.completedWorkouts.some(e => e.week === w && e.day === d)) return true;
   if (w < state.currentWeek) return true;
   if (w === state.currentWeek && d < state.currentDay) return true;
@@ -1522,8 +1515,8 @@ async function unzipPuud(buf) {
 // Only handles INTEGER and TEXT columns, no overflow pages.
 function readSQLiteTable(db, tableName) {
   if (!(db instanceof Uint8Array)) db = new Uint8Array(db.buffer ?? db);
-
-  if (new TextDecoder().decode(db.slice(0, 15)) !== 'SQLite format 3') return [];
+  const dec = new TextDecoder();
+  if (dec.decode(db.slice(0, 15)) !== 'SQLite format 3') return [];
 
   const pgSz = db[16]*256 + db[17];
   const pg   = n => db.subarray((n-1)*pgSz, n*pgSz);
@@ -1558,7 +1551,7 @@ function readSQLiteTable(db, tableName) {
       else if (t===8)               { vals.push(0); }
       else if (t===9)               { vals.push(1); }
       else if (t>=12 && t%2===0)    { d+=(t-12)/2; vals.push(null); }          // blob
-      else if (t>=13 && t%2===1)    { const l=(t-13)/2; vals.push(new TextDecoder().decode(a.slice(d,d+l))); d+=l; }
+      else if (t>=13 && t%2===1)    { const l=(t-13)/2; vals.push(dec.decode(a.slice(d,d+l))); d+=l; }
     }
     return vals;
   }
@@ -1628,7 +1621,7 @@ function applyPuudData(prefs, rows) {
     const d = new Date(s.year, s.month-1, s.day);
     if (existing.has(d.toDateString())) continue;
     state.completedWorkouts.push({
-      week: -2, day: -2,
+      week: WEEK_PUUD_IMPORT, day: WEEK_PUUD_IMPORT,
       date: d.toISOString(),
       sets: s.sets,
       total: s.total,
@@ -1719,7 +1712,7 @@ function applyMigration() {
     const migrationTotal = Math.max(0, totalRaw - alreadyCounted);
     if (migrationTotal > 0) {
       state.completedWorkouts.push({
-        week: -1, day: -1,        // sentinel: marks this as a migration entry
+        week: WEEK_MIGRATION, day: WEEK_MIGRATION,
         date: new Date().toISOString(),
         sets: [], total: migrationTotal,
         note: 'Migrated from 100 Pushups app',
@@ -1761,7 +1754,14 @@ function registerSW() {
       e.waitUntil(self.clients.claim());
     });
     self.addEventListener('fetch', e => {
-      e.respondWith(fetch(e.request).catch(() => caches.match(e.request)));
+      e.respondWith(
+        caches.open(CACHE).then(cache =>
+          fetch(e.request).then(r => {
+            if (r.ok) cache.put(e.request, r.clone());
+            return r;
+          }).catch(() => cache.match(e.request))
+        )
+      );
     });
   `;
   try {
