@@ -1,0 +1,1816 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#0f0f1a">
+  <title>OpenPushups</title>
+
+  <!-- Apply theme before first paint to avoid flash -->
+  <script>
+    (function() {
+      try {
+        const s = JSON.parse(localStorage.getItem('openpushups_v1') || '{}');
+        const t = (s.settings && s.settings.theme) || 'system';
+        document.documentElement.classList.add('theme-' + t);
+      } catch(e) {
+        document.documentElement.classList.add('theme-system');
+      }
+    })();
+  </script>
+
+  <style>
+    :root {
+      --bg: #0f0f1a;
+      --card: #1a1a2e;
+      --card2: #16213e;
+      --primary: #e94560;
+      --primary-dark: #c73652;
+      --accent: #4a90e2;
+      --text: #eaeaea;
+      --muted: #8888aa;
+      --border: #2a2a4a;
+      --success: #2ecc71;
+      --warning: #f39c12;
+      --rest-color: #4a90e2;
+      --toast-bg: #222;
+      --radius: 14px;
+      --tab-height: 64px;
+    }
+
+    /* Light theme tokens */
+    .theme-light {
+      --bg: #f4f4f8;
+      --card: #ffffff;
+      --card2: #ebebf3;
+      --primary: #d63355;
+      --primary-dark: #b82a47;
+      --accent: #3a7fd5;
+      --text: #1a1a2e;
+      --muted: #66668a;
+      --border: #d8d8ea;
+      --success: #27ae60;
+      --warning: #e67e22;
+      --rest-color: #3a7fd5;
+      --toast-bg: #333;
+    }
+
+    /* System preference — applied when no explicit override is set */
+    @media (prefers-color-scheme: light) {
+      .theme-system {
+        --bg: #f4f4f8;
+        --card: #ffffff;
+        --card2: #ebebf3;
+        --primary: #d63355;
+        --primary-dark: #b82a47;
+        --accent: #3a7fd5;
+        --text: #1a1a2e;
+        --muted: #66668a;
+        --border: #d8d8ea;
+        --success: #27ae60;
+        --warning: #e67e22;
+        --rest-color: #3a7fd5;
+        --toast-bg: #333;
+      }
+    }
+
+    /* Segmented theme picker */
+    .theme-picker {
+      display: flex; background: var(--card2);
+      border-radius: 10px; padding: 3px; gap: 2px;
+    }
+    .theme-option {
+      flex: 1; border: none; border-radius: 8px;
+      padding: 7px 4px; font-size: 12px; font-weight: 700;
+      cursor: pointer; background: transparent;
+      color: var(--muted); transition: all .2s;
+    }
+    .theme-option.active {
+      background: var(--card); color: var(--text);
+      box-shadow: 0 1px 4px rgba(0,0,0,.15);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+    }
+
+    /* ── Splash ── */
+    #splash {
+      position: fixed; inset: 0; z-index: 1000;
+      background: var(--bg);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 16px;
+      transition: opacity .4s;
+    }
+    #splash.hide { opacity: 0; pointer-events: none; }
+    .splash-logo { font-size: 64px; }
+    .splash-title { font-size: 28px; font-weight: 800; color: var(--primary); }
+    .splash-sub { color: var(--muted); font-size: 14px; }
+
+    /* ── Layout ── */
+    #app { display: flex; flex-direction: column; flex: 1; height: 100dvh; }
+
+    .screen {
+      flex: 1; overflow-y: auto; overflow-x: hidden;
+      padding: 0 16px 16px;
+      display: none;
+    }
+    .screen.active { display: block; }
+
+    /* ── Header ── */
+    .header {
+      padding: 48px 20px 16px;
+      background: linear-gradient(180deg, var(--card) 0%, transparent 100%);
+    }
+    .header h1 { font-size: 13px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+    .header h2 { font-size: 26px; font-weight: 800; margin-top: 2px; }
+
+    /* ── Tab Bar ── */
+    #tab-bar {
+      display: flex;
+      background: var(--card);
+      border-top: 1px solid var(--border);
+      height: var(--tab-height);
+      flex-shrink: 0;
+    }
+    .tab {
+      flex: 1; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 4px;
+      background: none; border: none; color: var(--muted);
+      font-size: 10px; font-weight: 600; cursor: pointer;
+      transition: color .2s; padding: 8px 0;
+    }
+    .tab.active { color: var(--primary); }
+    .tab svg { width: 22px; height: 22px; }
+
+    /* ── Cards ── */
+    .card {
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 18px;
+      margin-bottom: 12px;
+    }
+    .card-label { font-size: 11px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .8px; color: var(--muted); margin-bottom: 6px; }
+    .card-value { font-size: 36px; font-weight: 800; }
+    .card-sub { font-size: 13px; color: var(--muted); margin-top: 2px; }
+
+    /* ── Buttons ── */
+    .btn {
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      border: none; border-radius: var(--radius); font-weight: 700;
+      cursor: pointer; transition: transform .1s, opacity .15s;
+      font-size: 16px; padding: 16px 24px; width: 100%;
+    }
+    .btn:active { transform: scale(.97); opacity: .85; }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-secondary { background: var(--card2); color: var(--text); }
+    .btn-success { background: var(--success); color: #fff; }
+    .btn-danger { background: #c0392b; color: #fff; }
+    .btn-sm { padding: 10px 16px; font-size: 14px; width: auto; border-radius: 10px; }
+
+    /* ── Home Screen ── */
+    .week-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; margin-bottom: 12px; }
+    .week-cell {
+      aspect-ratio: 1; border-radius: 10px; display: flex;
+      align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 700;
+      background: var(--card2); color: var(--muted); border: 1.5px solid transparent;
+      cursor: pointer; transition: all .2s;
+    }
+    .week-cell.done { background: var(--primary); color: #fff; border-color: var(--primary); }
+    .week-cell.current { border-color: var(--primary); color: var(--primary); }
+    .week-cell.locked { opacity: .35; cursor: default; }
+
+    .day-row {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
+      margin-bottom: 16px;
+    }
+    .day-cell {
+      background: var(--card2); border-radius: 12px;
+      padding: 14px 8px; text-align: center;
+      border: 1.5px solid transparent; cursor: pointer;
+      transition: all .2s;
+    }
+    .day-cell .day-num { font-size: 11px; color: var(--muted); font-weight: 600; }
+    .day-cell .day-reps { font-size: 20px; font-weight: 800; margin: 4px 0; }
+    .day-cell .day-sets { font-size: 11px; color: var(--muted); }
+    .day-cell.done { border-color: var(--success); }
+    .day-cell.done .day-reps { color: var(--success); }
+    .day-cell.current { border-color: var(--primary); }
+    .day-cell.current .day-reps { color: var(--primary); }
+    .day-cell.locked { opacity: .35; cursor: default; }
+
+    .stats-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+    .stat-mini {
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 14px;
+    }
+    .stat-mini .v { font-size: 28px; font-weight: 800; }
+    .stat-mini .l { font-size: 11px; color: var(--muted); font-weight: 600;
+      text-transform: uppercase; letter-spacing: .6px; }
+
+    /* ── Workout Screen ── */
+    #workout-screen {
+      position: fixed; inset: 0; z-index: 100;
+      background: var(--bg);
+      display: none; flex-direction: column;
+    }
+    #workout-screen.open { display: flex; }
+
+    .workout-header {
+      padding: 48px 20px 16px;
+      display: flex; align-items: center; gap: 12px;
+    }
+    .workout-header h2 { font-size: 18px; font-weight: 800; }
+    .workout-header .wh-sub { font-size: 13px; color: var(--muted); }
+    .btn-icon {
+      background: var(--card2); border: none; border-radius: 10px;
+      padding: 10px; cursor: pointer; color: var(--text);
+      flex-shrink: 0;
+    }
+    .btn-icon svg { display: block; width: 20px; height: 20px; }
+
+    .set-progress {
+      display: flex; gap: 6px; padding: 0 20px 16px;
+    }
+    .set-pip {
+      flex: 1; height: 4px; border-radius: 99px;
+      background: var(--border); transition: background .3s;
+    }
+    .set-pip.done { background: var(--primary); }
+    .set-pip.current { background: var(--accent); }
+
+    .workout-body {
+      flex: 1; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 20px;
+      gap: 12px;
+    }
+
+    /* Rep counter ring */
+    .rep-ring-wrap {
+      position: relative; cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      transition: transform .08s;
+    }
+    .rep-ring-wrap:active { transform: scale(.95); }
+    .rep-ring { width: 220px; height: 220px; }
+    .rep-ring-bg { fill: none; stroke: var(--border); stroke-width: 10; }
+    .rep-ring-fg { fill: none; stroke: var(--primary); stroke-width: 10;
+      stroke-linecap: round; transition: stroke-dashoffset .4s ease;
+      transform-origin: center; transform: rotate(-90deg);
+    }
+    .rep-ring-fg.rest-mode { stroke: var(--rest-color); }
+    .rep-center {
+      position: absolute; inset: 0;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+    }
+    .rep-number { font-size: 64px; font-weight: 900; line-height: 1; }
+    .rep-label { font-size: 14px; color: var(--muted); font-weight: 600; }
+
+    .set-label { font-size: 15px; font-weight: 700; color: var(--muted); }
+    .set-type { font-size: 13px; color: var(--accent); font-weight: 600; }
+
+    /* +/- controls for max sets */
+    .rep-controls {
+      display: flex; align-items: center; gap: 16px;
+    }
+    .rep-adj {
+      width: 52px; height: 52px; border-radius: 50%;
+      background: var(--card2); border: none; color: var(--text);
+      font-size: 28px; font-weight: 300; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: background .15s;
+    }
+    .rep-adj:active { background: var(--primary); }
+
+    .workout-footer { padding: 16px 20px 32px; }
+    .rest-skip { background: none; border: none; color: var(--muted);
+      font-size: 13px; font-weight: 600; cursor: pointer;
+      display: block; width: 100%; text-align: center; padding: 12px; }
+
+    /* Completion overlay */
+    #workout-complete {
+      position: absolute; inset: 0; z-index: 10;
+      background: var(--bg);
+      display: none; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 16px; padding: 32px;
+    }
+    #workout-complete.show { display: flex; }
+    .complete-icon { font-size: 72px; }
+    .complete-title { font-size: 28px; font-weight: 900; color: var(--success); }
+    .complete-sub { color: var(--muted); text-align: center; }
+    .complete-reps { font-size: 56px; font-weight: 900; }
+    .complete-reps-label { color: var(--muted); font-size: 14px; }
+
+    /* ── History Screen ── */
+    .history-item {
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      margin-bottom: 10px;
+      display: flex; align-items: center; gap: 12px;
+    }
+    .hi-dot {
+      width: 40px; height: 40px; border-radius: 50%;
+      background: var(--primary); display: flex;
+      align-items: center; justify-content: center;
+      font-size: 14px; font-weight: 800; flex-shrink: 0;
+    }
+    .hi-info { flex: 1; }
+    .hi-title { font-size: 15px; font-weight: 700; }
+    .hi-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+    .hi-reps { font-size: 22px; font-weight: 800; color: var(--primary); }
+
+    /* ── Stats Screen ── */
+    .progress-bar-wrap { background: var(--card2); border-radius: 99px; height: 8px; margin-top: 8px; overflow: hidden; }
+    .progress-bar { height: 100%; border-radius: 99px; background: var(--primary); transition: width .6s ease; }
+    .achievement-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .achievement {
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 14px;
+      opacity: .35;
+      transition: opacity .3s;
+    }
+    .achievement.unlocked { opacity: 1; }
+    .ach-icon { font-size: 28px; margin-bottom: 6px; }
+    .ach-name { font-size: 13px; font-weight: 700; }
+    .ach-desc { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+    /* ── Settings Screen ── */
+    .setting-row {
+      display: flex; align-items: center; justify-content: space-between;
+      background: var(--card); border-radius: var(--radius);
+      padding: 16px; margin-bottom: 10px;
+    }
+    .setting-row .sr-info {}
+    .setting-row .sr-title { font-size: 15px; font-weight: 700; }
+    .setting-row .sr-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+    .toggle {
+      width: 48px; height: 28px; border-radius: 99px;
+      background: var(--border); position: relative;
+      cursor: pointer; border: none; transition: background .2s;
+      flex-shrink: 0;
+    }
+    .toggle.on { background: var(--primary); }
+    .toggle::after {
+      content: ''; position: absolute;
+      width: 22px; height: 22px; border-radius: 50%;
+      background: #fff; top: 3px; left: 3px;
+      transition: transform .2s;
+    }
+    .toggle.on::after { transform: translateX(20px); }
+
+    .section-title {
+      font-size: 12px; font-weight: 700; color: var(--muted);
+      text-transform: uppercase; letter-spacing: 1px;
+      margin: 20px 0 10px;
+    }
+
+    /* ── Misc ── */
+    .empty-state {
+      text-align: center; padding: 60px 20px; color: var(--muted);
+    }
+    .empty-state .es-icon { font-size: 48px; margin-bottom: 12px; }
+    .empty-state p { font-size: 14px; }
+
+    .toast {
+      position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%) translateY(20px);
+      background: var(--toast-bg); color: #fff; padding: 12px 20px;
+      border-radius: 99px; font-size: 13px; font-weight: 600;
+      opacity: 0; transition: all .3s; pointer-events: none; z-index: 999;
+      white-space: nowrap;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* ── Scrollbar ── */
+    ::-webkit-scrollbar { width: 0; }
+
+    /* ── Migration wizard ── */
+    #migrate-overlay {
+      position: fixed; inset: 0; z-index: 200;
+      background: rgba(0,0,0,.6); backdrop-filter: blur(4px);
+      display: flex; align-items: flex-end;
+      opacity: 0; pointer-events: none; transition: opacity .25s;
+    }
+    #migrate-overlay.open { opacity: 1; pointer-events: all; }
+    #migrate-sheet {
+      width: 100%; background: var(--card);
+      border-radius: 20px 20px 0 0; padding: 24px 20px 40px;
+      transform: translateY(100%); transition: transform .3s cubic-bezier(.4,0,.2,1);
+    }
+    #migrate-overlay.open #migrate-sheet { transform: translateY(0); }
+    .migrate-handle {
+      width: 36px; height: 4px; border-radius: 99px;
+      background: var(--border); margin: 0 auto 20px;
+    }
+    .migrate-title { font-size: 18px; font-weight: 800; margin-bottom: 4px; }
+    .migrate-sub   { font-size: 13px; color: var(--muted); margin-bottom: 20px; line-height: 1.5; }
+
+    .migrate-label { font-size: 11px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .8px; color: var(--muted); margin-bottom: 8px; }
+
+    .migrate-week-grid { display: grid; grid-template-columns: repeat(6,1fr); gap: 6px; margin-bottom: 18px; }
+    .migrate-day-grid  { display: grid; grid-template-columns: repeat(3,1fr);  gap: 8px; margin-bottom: 18px; }
+
+    .mig-btn {
+      border: 1.5px solid var(--border); background: var(--card2);
+      border-radius: 10px; padding: 10px 4px; font-size: 13px;
+      font-weight: 700; color: var(--muted); cursor: pointer; transition: all .15s;
+      text-align: center;
+    }
+    .mig-btn.sel { border-color: var(--primary); background: var(--primary); color: #fff; }
+
+    .migrate-input {
+      width: 100%; background: var(--card2); border: 1.5px solid var(--border);
+      border-radius: 10px; padding: 12px 14px; color: var(--text);
+      font-size: 16px; font-weight: 700; margin-bottom: 18px;
+      outline: none; transition: border-color .15s;
+    }
+    .migrate-input:focus { border-color: var(--primary); }
+    .migrate-input::placeholder { color: var(--muted); font-weight: 400; }
+
+    /* ── Safe area ── */
+    #tab-bar { padding-bottom: env(safe-area-inset-bottom, 0); height: calc(var(--tab-height) + env(safe-area-inset-bottom, 0)); }
+
+  </style>
+</head>
+<body>
+
+<!-- Splash -->
+<div id="splash">
+  <div class="splash-logo">💪</div>
+  <div class="splash-title">OpenPushups</div>
+  <div class="splash-sub">Your 100-pushup journey</div>
+</div>
+
+<!-- App -->
+<div id="app">
+
+  <!-- HOME SCREEN -->
+  <div id="screen-home" class="screen active">
+    <div class="header">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div>
+          <h1>OpenPushups</h1>
+          <h2 id="home-greeting">Good morning 💪</h2>
+        </div>
+        <div id="streak-badge" style="background:var(--card);border-radius:12px;padding:10px 14px;text-align:center">
+          <div style="font-size:20px">🔥</div>
+          <div id="streak-count" style="font-size:16px;font-weight:800">0</div>
+          <div style="font-size:10px;color:var(--muted);font-weight:600">day streak</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="padding: 0 0 4px">
+
+      <!-- Quick stats -->
+      <div class="stats-row">
+        <div class="stat-mini">
+          <div class="l">Total Pushups</div>
+          <div id="total-pushups" class="v">0</div>
+        </div>
+        <div class="stat-mini">
+          <div class="l">Workouts Done</div>
+          <div id="total-workouts" class="v">0</div>
+        </div>
+      </div>
+
+      <!-- Week selector -->
+      <div class="card">
+        <div class="card-label">6-Week Program</div>
+        <div class="week-grid" id="week-grid"></div>
+        <div class="day-row" id="day-row"></div>
+        <button class="btn btn-primary" id="start-btn" onclick="startWorkout()">
+          <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M8 5v14l11-7z"/></svg>
+          Start Workout
+        </button>
+      </div>
+
+      <!-- Next workout preview -->
+      <div class="card" id="next-preview">
+        <div class="card-label">Today's Sets</div>
+        <div id="sets-preview" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- HISTORY SCREEN -->
+  <div id="screen-history" class="screen">
+    <div class="header">
+      <h1>Activity</h1>
+      <h2>History</h2>
+    </div>
+    <div id="history-list"></div>
+  </div>
+
+  <!-- STATS SCREEN -->
+  <div id="screen-stats" class="screen">
+    <div class="header">
+      <h1>Performance</h1>
+      <h2>Statistics</h2>
+    </div>
+
+    <div class="card">
+      <div class="card-label">Program Progress</div>
+      <div id="progress-text" style="font-size:14px;color:var(--muted);margin-top:4px"></div>
+      <div class="progress-bar-wrap" style="margin-top:10px">
+        <div class="progress-bar" id="progress-bar" style="width:0%"></div>
+      </div>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat-mini">
+        <div class="l">Total Pushups</div>
+        <div id="s-total" class="v">0</div>
+      </div>
+      <div class="stat-mini">
+        <div class="l">Best Workout</div>
+        <div id="s-best" class="v">0</div>
+      </div>
+      <div class="stat-mini">
+        <div class="l">Avg per session</div>
+        <div id="s-avg" class="v">0</div>
+      </div>
+      <div class="stat-mini">
+        <div class="l">Best Streak</div>
+        <div id="s-streak" class="v">0</div>
+      </div>
+    </div>
+
+    <div class="section-title">Achievements</div>
+    <div class="achievement-grid" id="achievements"></div>
+  </div>
+
+  <!-- SETTINGS SCREEN -->
+  <div id="screen-settings" class="screen">
+    <div class="header">
+      <h1>Preferences</h1>
+      <h2>Settings</h2>
+    </div>
+
+    <div class="section-title">Appearance</div>
+
+    <div class="setting-row" style="flex-direction:column;align-items:stretch;gap:10px">
+      <div class="sr-info">
+        <div class="sr-title">Theme</div>
+        <div class="sr-sub">Follows system if set to Auto</div>
+      </div>
+      <div class="theme-picker">
+        <button class="theme-option" data-theme-opt="system"  onclick="setTheme('system')">Auto</button>
+        <button class="theme-option" data-theme-opt="light"   onclick="setTheme('light')">Light</button>
+        <button class="theme-option" data-theme-opt="dark"    onclick="setTheme('dark')">Dark</button>
+      </div>
+    </div>
+
+    <div class="section-title">Workout</div>
+
+    <div class="setting-row">
+      <div class="sr-info">
+        <div class="sr-title">Sound Effects</div>
+        <div class="sr-sub">Beep when rest ends</div>
+      </div>
+      <button class="toggle" id="toggle-sound" onclick="toggleSetting('sound')"></button>
+    </div>
+
+    <div class="setting-row">
+      <div class="sr-info">
+        <div class="sr-title">Vibration</div>
+        <div class="sr-sub">Haptic feedback</div>
+      </div>
+      <button class="toggle" id="toggle-vibrate" onclick="toggleSetting('vibrate')"></button>
+    </div>
+
+    <div class="setting-row">
+      <div class="sr-info">
+        <div class="sr-title">Auto-advance sets</div>
+        <div class="sr-sub">Skip rest screen after timer</div>
+      </div>
+      <button class="toggle" id="toggle-autoadvance" onclick="toggleSetting('autoadvance')"></button>
+    </div>
+
+    <div class="section-title">Data</div>
+
+    <div class="setting-row" onclick="openMigrationWizard()" style="cursor:pointer">
+      <div class="sr-info">
+        <div class="sr-title">Migrate from 100 Pushups</div>
+        <div class="sr-sub">Continue your Google Play progress here</div>
+      </div>
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>
+      </svg>
+    </div>
+
+    <div class="setting-row" onclick="exportData()" style="cursor:pointer">
+      <div class="sr-info">
+        <div class="sr-title">Export Backup</div>
+        <div class="sr-sub">Download progress as JSON</div>
+      </div>
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2.5">
+        <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+      </svg>
+    </div>
+
+    <div class="setting-row" onclick="importData()" style="cursor:pointer">
+      <div class="sr-info">
+        <div class="sr-title">Import Backup</div>
+        <div class="sr-sub">Restore from OpenPushups JSON</div>
+      </div>
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2.5">
+        <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+      </svg>
+    </div>
+
+    <div class="setting-row" onclick="document.getElementById('puud-file').click()" style="cursor:pointer">
+      <div class="sr-info">
+        <div class="sr-title">Import .puud Backup</div>
+        <div class="sr-sub">Import directly from 100 Pushups app backup file</div>
+      </div>
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2.5">
+        <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+      </svg>
+    </div>
+
+    <input type="file" id="import-file" accept=".json" style="display:none" onchange="handleImport(event)">
+    <input type="file" id="puud-file"   accept=".puud" style="display:none" onchange="handlePuudImport(event)">
+
+    <div class="section-title" style="color:#c0392b">Danger Zone</div>
+
+    <button class="btn btn-danger" onclick="confirmReset()" style="margin-bottom:10px">
+      Reset All Progress
+    </button>
+
+    <div style="text-align:center;padding:20px 0;color:var(--muted);font-size:12px">
+      OpenPushups — Free & Open Source<br>Data stored locally on your device
+    </div>
+  </div>
+
+  <!-- Tab bar -->
+  <div id="tab-bar">
+    <button class="tab active" data-tab="home" onclick="switchTab('home')">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+      Home
+    </button>
+    <button class="tab" data-tab="history" onclick="switchTab('history')">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42A8.954 8.954 0 0 0 13 21a9 9 0 0 0 0-18zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg>
+      History
+    </button>
+    <button class="tab" data-tab="stats" onclick="switchTab('stats')">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+      Stats
+    </button>
+    <button class="tab" data-tab="settings" onclick="switchTab('settings')">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.07-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.74,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.07,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.47-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/></svg>
+      Settings
+    </button>
+  </div>
+</div>
+
+<!-- WORKOUT OVERLAY -->
+<div id="workout-screen">
+
+  <div id="workout-complete">
+    <div class="complete-icon">🎉</div>
+    <div class="complete-title">Workout Complete!</div>
+    <div class="complete-reps" id="complete-total">0</div>
+    <div class="complete-reps-label">total pushups</div>
+    <div class="complete-sub" id="complete-sub"></div>
+    <div style="width:100%;margin-top:8px">
+      <button class="btn btn-success" onclick="finishWorkout()">Save & Continue</button>
+    </div>
+  </div>
+
+  <div class="workout-header">
+    <button class="btn-icon" onclick="quitWorkout()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+      </svg>
+    </button>
+    <div style="flex:1">
+      <div class="wh-sub" id="workout-title-sub">Week 1 · Day 1</div>
+      <h2 id="workout-title-main">Workout</h2>
+    </div>
+  </div>
+
+  <div class="set-progress" id="set-pips"></div>
+
+  <div class="workout-body">
+    <div class="set-label" id="set-label">Set 1 of 5</div>
+    <div class="set-type" id="set-type-label"></div>
+
+    <div class="rep-ring-wrap" onclick="repTap()" title="Tap to count a rep">
+      <svg class="rep-ring" viewBox="0 0 220 220">
+        <circle class="rep-ring-bg" cx="110" cy="110" r="95"/>
+        <circle class="rep-ring-fg" id="ring-fg" cx="110" cy="110" r="95"
+          stroke-dasharray="596.9" stroke-dashoffset="0"/>
+      </svg>
+      <div class="rep-center">
+        <div class="rep-number" id="rep-display">15</div>
+        <div class="rep-label" id="rep-label-text">remaining</div>
+      </div>
+    </div>
+
+    <!-- +/- for max set -->
+    <div class="rep-controls" id="rep-controls" style="display:none">
+      <button class="rep-adj" onclick="adjustReps(-1)">−</button>
+      <div style="font-size:13px;color:var(--muted);font-weight:600">adjust reps</div>
+      <button class="rep-adj" onclick="adjustReps(1)">+</button>
+    </div>
+  </div>
+
+  <div class="workout-footer">
+    <button class="btn btn-primary" id="action-btn" onclick="handleAction()">Done</button>
+    <button class="rest-skip" id="skip-btn" onclick="skipRest()" style="display:none">Skip rest</button>
+  </div>
+</div>
+
+<!-- Migration wizard -->
+<div id="migrate-overlay" onclick="closeMigrationWizard(event)">
+  <div id="migrate-sheet">
+    <div class="migrate-handle"></div>
+    <div class="migrate-title">Migrate from 100 Pushups</div>
+    <div class="migrate-sub">Open your old app and pick up exactly where you left off. Your previous workouts were already done — just tell us your current position.</div>
+
+    <div class="migrate-label">Which week were you on?</div>
+    <div class="migrate-week-grid" id="mig-week-grid"></div>
+
+    <div class="migrate-label">Which day of that week?</div>
+    <div class="migrate-day-grid" id="mig-day-grid"></div>
+
+    <div class="migrate-label">Approx. total pushups done (optional)</div>
+    <input class="migrate-input" id="mig-total" type="number" min="0" inputmode="numeric"
+      placeholder="e.g. 850">
+
+    <button class="btn btn-primary" id="mig-confirm-btn" onclick="applyMigration()">
+      Continue from Week 1, Day 1
+    </button>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════════════
+// PROGRAM DATA  (6 weeks × 3 days)
+// Each day: { sets: number[], isLastMax: bool, lastMin: number, rest: seconds }
+// ═══════════════════════════════════════════════════
+const PROGRAM = [
+  // Week 1
+  [
+    { sets:[2,3,2,2], isLastMax:true, lastMin:3,  rest:60  },
+    { sets:[3,4,2,3], isLastMax:true, lastMin:4,  rest:60  },
+    { sets:[3,4,3,3], isLastMax:true, lastMin:5,  rest:60  },
+  ],
+  // Week 2
+  [
+    { sets:[5,6,4,4], isLastMax:true, lastMin:5,  rest:90  },
+    { sets:[6,8,4,4], isLastMax:true, lastMin:6,  rest:90  },
+    { sets:[6,9,5,5], isLastMax:true, lastMin:7,  rest:90  },
+  ],
+  // Week 3
+  [
+    { sets:[8,10,7,7],  isLastMax:true, lastMin:7,  rest:90  },
+    { sets:[9,11,8,7],  isLastMax:true, lastMin:8,  rest:90  },
+    { sets:[10,12,9,9], isLastMax:true, lastMin:9,  rest:120 },
+  ],
+  // Week 4
+  [
+    { sets:[11,13,9,9],   isLastMax:true, lastMin:10, rest:120 },
+    { sets:[12,14,11,10], isLastMax:true, lastMin:11, rest:120 },
+    { sets:[14,16,12,12], isLastMax:true, lastMin:13, rest:120 },
+  ],
+  // Week 5
+  [
+    { sets:[16,18,14,14], isLastMax:true, lastMin:15, rest:120 },
+    { sets:[18,20,15,15], isLastMax:true, lastMin:16, rest:120 },
+    { sets:[20,22,18,18], isLastMax:true, lastMin:18, rest:120 },
+  ],
+  // Week 6
+  [
+    { sets:[22,25,20,20], isLastMax:true, lastMin:22, rest:120 },
+    { sets:[25,28,22,22], isLastMax:true, lastMin:25, rest:120 },
+    { sets:[30,35,25,25], isLastMax:true, lastMin:35, rest:120 },
+  ],
+];
+
+// ═══════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════
+let state = {
+  currentWeek: 0,
+  currentDay: 0,
+  completedWorkouts: [],   // [{week, day, date, sets, total}]
+  settings: {
+    sound: true,
+    vibrate: true,
+    autoadvance: false
+  },
+  bestStreak: 0,
+};
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem('openpushups_v1');
+    if (raw) state = JSON.parse(raw);
+    // Ensure settings has all keys
+    state.settings = Object.assign({ sound:true, vibrate:true, autoadvance:false, theme:'system' }, state.settings);
+    state.bestStreak = state.bestStreak || 0;
+  } catch(e) { /* fresh state */ }
+}
+
+function saveState() {
+  localStorage.setItem('openpushups_v1', JSON.stringify(state));
+}
+
+// ═══════════════════════════════════════════════════
+// THEMING
+// ═══════════════════════════════════════════════════
+function applyTheme(theme) {
+  const html = document.documentElement;
+  html.classList.remove('theme-system', 'theme-light', 'theme-dark');
+  html.classList.add(`theme-${theme}`);
+
+  const isDark = theme === 'dark' ||
+    (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  const themeColor = isDark ? '#0f0f1a' : '#f4f4f8';
+  document.querySelector('meta[name="theme-color"]').setAttribute('content', themeColor);
+  document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]')
+    .setAttribute('content', isDark ? 'black-translucent' : 'default');
+}
+
+function setTheme(theme) {
+  state.settings.theme = theme;
+  saveState();
+  applyTheme(theme);
+  updateSettingsUI();
+}
+
+// React to OS-level changes when set to "system"
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+  if ((state.settings.theme || 'system') === 'system') applyTheme('system');
+});
+
+// ═══════════════════════════════════════════════════
+// WORKOUT ENGINE
+// ═══════════════════════════════════════════════════
+let wk = {
+  weekIdx: 0, dayIdx: 0,
+  sets: [],           // full set list (fixed + last max)
+  currentSetIdx: 0,
+  repsLog: [],        // reps done per set
+  currentMaxReps: 0,  // editable for max set
+  repsRemaining: 0,   // countdown for current set
+  phase: 'work',      // 'work' | 'rest' | 'done'
+  restTimer: null,
+  restRemaining: 0,
+};
+
+function getDaySets(w, d) {
+  const day = PROGRAM[w][d];
+  const allSets = [...day.sets];
+  if (day.isLastMax) allSets.push('max');
+  return allSets;
+}
+
+function startWorkout() {
+  wk.weekIdx = state.currentWeek;
+  wk.dayIdx = state.currentDay;
+
+  const day = PROGRAM[wk.weekIdx][wk.dayIdx];
+  wk.sets = getDaySets(wk.weekIdx, wk.dayIdx);
+  wk.currentSetIdx = 0;
+  wk.repsLog = [];
+  wk.phase = 'work';
+  wk.currentMaxReps = day.lastMin;
+  wk.repsRemaining = day.sets[0] !== undefined ? day.sets[0] : day.lastMin;
+
+  document.getElementById('workout-complete').classList.remove('show');
+  document.getElementById('workout-screen').classList.add('open');
+  document.body.style.overflow = 'hidden';
+
+  renderWorkoutUI();
+}
+
+function renderWorkoutUI() {
+  const day = PROGRAM[wk.weekIdx][wk.dayIdx];
+  const totalSets = wk.sets.length;
+  const idx = wk.currentSetIdx;
+  const isMax = wk.sets[idx] === 'max';
+  const isRest = wk.phase === 'rest';
+
+  // Header
+  document.getElementById('workout-title-sub').textContent =
+    `Week ${wk.weekIdx+1} · Day ${wk.dayIdx+1}`;
+  document.getElementById('workout-title-main').textContent = isRest
+    ? 'Rest' : `Set ${idx+1} of ${totalSets}`;
+
+  // Pips
+  const pips = document.getElementById('set-pips');
+  pips.innerHTML = wk.sets.map((_, i) => {
+    let cls = '';
+    if (i < idx) cls = 'done';
+    else if (i === idx) cls = 'current';
+    return `<div class="set-pip ${cls}"></div>`;
+  }).join('');
+
+  // Set label
+  document.getElementById('set-label').textContent = isRest
+    ? 'Rest Period' : `Set ${idx+1} of ${totalSets}`;
+  document.getElementById('set-type-label').textContent = isRest
+    ? ''
+    : isMax
+      ? `Min ${day.lastMin} · tap ring to count`
+      : 'Tap ring to count';
+
+  // Ring & number
+  const ring = document.getElementById('ring-fg');
+  const repDisplay = document.getElementById('rep-display');
+  const repLabel = document.getElementById('rep-label-text');
+  const circumference = 596.9;
+
+  ring.classList.toggle('rest-mode', isRest);
+
+  if (isRest) {
+    const pct = wk.restRemaining / day.rest;
+    ring.style.strokeDashoffset = circumference * (1 - pct);
+    repDisplay.textContent = wk.restRemaining;
+    repLabel.textContent = 'seconds';
+  } else {
+    const total = isMax ? wk.currentMaxReps : wk.sets[idx];
+    const pct = total > 0 ? wk.repsRemaining / total : 0;
+    ring.style.strokeDashoffset = circumference * (1 - pct);
+    repDisplay.textContent = wk.repsRemaining;
+    repLabel.textContent = wk.repsRemaining > 0 ? 'remaining' : 'done!';
+  }
+
+  // Controls
+  const controls = document.getElementById('rep-controls');
+  controls.style.display = (isMax && !isRest) ? 'flex' : 'none';
+
+  // Footer
+  const actionBtn = document.getElementById('action-btn');
+  const skipBtn = document.getElementById('skip-btn');
+  if (isRest) {
+    actionBtn.textContent = 'Skip Rest';
+    actionBtn.className = 'btn btn-secondary';
+    skipBtn.style.display = 'none';
+  } else {
+    actionBtn.textContent = idx === totalSets-1 ? 'Finish' : 'Done';
+    actionBtn.className = 'btn btn-primary';
+    skipBtn.style.display = 'none';
+  }
+
+}
+
+function handleAction() {
+  if (wk.phase === 'rest') {
+    skipRest();
+  } else {
+    completeSet();
+  }
+}
+
+function completeSet() {
+  const day = PROGRAM[wk.weekIdx][wk.dayIdx];
+  const isMax = wk.sets[wk.currentSetIdx] === 'max';
+  const reps = isMax ? wk.currentMaxReps : wk.sets[wk.currentSetIdx];
+  wk.repsLog.push(reps);
+
+  vibrate([30]);
+
+  if (wk.currentSetIdx < wk.sets.length - 1) {
+    // Start rest
+    wk.phase = 'rest';
+    wk.restRemaining = day.rest;
+    startRestTimer();
+  } else {
+    // Workout done
+    showCompletion();
+  }
+}
+
+function startRestTimer() {
+  renderWorkoutUI();
+  if (wk.restTimer) clearInterval(wk.restTimer);
+  wk.restTimer = setInterval(() => {
+    wk.restRemaining--;
+    if (wk.restRemaining <= 0) {
+      clearInterval(wk.restTimer);
+      wk.restTimer = null;
+      if (state.settings.autoadvance) {
+        advanceSet();
+      } else {
+        playBeep();
+        vibrate([50, 30, 50]);
+        renderWorkoutUI();
+      }
+    } else {
+      updateRestRing();
+    }
+  }, 1000);
+}
+
+function updateRestRing() {
+  const day = PROGRAM[wk.weekIdx][wk.dayIdx];
+  const pct = wk.restRemaining / day.rest;
+  const circumference = 596.9;
+  document.getElementById('ring-fg').style.strokeDashoffset = circumference * (1 - pct);
+  document.getElementById('rep-display').textContent = wk.restRemaining;
+}
+
+function skipRest() {
+  if (wk.restTimer) { clearInterval(wk.restTimer); wk.restTimer = null; }
+  advanceSet();
+}
+
+function advanceSet() {
+  wk.currentSetIdx++;
+  wk.phase = 'work';
+  const day = PROGRAM[wk.weekIdx][wk.dayIdx];
+  const s = wk.sets[wk.currentSetIdx];
+  if (s === 'max') {
+    wk.currentMaxReps = day.lastMin;
+    wk.repsRemaining = day.lastMin;
+  } else {
+    wk.repsRemaining = s;
+  }
+  renderWorkoutUI();
+}
+
+function adjustReps(delta) {
+  wk.currentMaxReps = Math.max(1, wk.currentMaxReps + delta);
+  wk.repsRemaining  = wk.currentMaxReps;
+  const circumference = 596.9;
+  document.getElementById('ring-fg').style.strokeDashoffset = 0; // full ring at new target
+  document.getElementById('rep-display').textContent = wk.repsRemaining;
+  document.getElementById('rep-label-text').textContent = 'remaining';
+  vibrate([10]);
+}
+
+function repTap() {
+  if (wk.phase !== 'work') return;
+  if (wk.repsRemaining <= 0) return;
+
+  wk.repsRemaining--;
+  vibrate([18]);
+
+  const isMax = wk.sets[wk.currentSetIdx] === 'max';
+  const total = isMax ? wk.currentMaxReps : wk.sets[wk.currentSetIdx];
+  const circumference = 596.9;
+  const pct = total > 0 ? wk.repsRemaining / total : 0;
+
+  document.getElementById('ring-fg').style.strokeDashoffset = circumference * (1 - pct);
+  document.getElementById('rep-display').textContent = wk.repsRemaining;
+  document.getElementById('rep-label-text').textContent = wk.repsRemaining > 0 ? 'remaining' : 'done!';
+
+  if (wk.repsRemaining === 0) {
+    playBeep(false);
+    vibrate([40, 20, 80]);
+    setTimeout(() => completeSet(), 500);
+  }
+}
+
+function showCompletion() {
+  if (wk.restTimer) { clearInterval(wk.restTimer); wk.restTimer = null; }
+  const total = wk.repsLog.reduce((a,b) => a+b, 0);
+  document.getElementById('complete-total').textContent = total;
+  document.getElementById('complete-sub').textContent =
+    `Sets: ${wk.repsLog.join(' · ')}`;
+  document.getElementById('workout-complete').classList.add('show');
+  vibrate([100, 50, 100, 50, 200]);
+  playBeep(true);
+}
+
+function finishWorkout() {
+  const total = wk.repsLog.reduce((a,b) => a+b, 0);
+  const entry = {
+    week: wk.weekIdx,
+    day: wk.dayIdx,
+    date: new Date().toISOString(),
+    sets: [...wk.repsLog],
+    total,
+  };
+  state.completedWorkouts.push(entry);
+
+  // Advance program
+  if (wk.dayIdx < 2) {
+    state.currentDay = wk.dayIdx + 1;
+  } else if (wk.weekIdx < 5) {
+    state.currentWeek = wk.weekIdx + 1;
+    state.currentDay = 0;
+  } else {
+    // Program complete!
+    state.currentWeek = 5;
+    state.currentDay = 2;
+  }
+
+  // Update best streak
+  const streak = calcStreak();
+  if (streak > state.bestStreak) state.bestStreak = streak;
+
+  saveState();
+  closeWorkout();
+  switchTab('home');
+  updateHomeUI();
+  showToast(`💪 ${total} pushups saved!`);
+}
+
+function quitWorkout() {
+  if (wk.restTimer) { clearInterval(wk.restTimer); wk.restTimer = null; }
+  if (wk.repsLog.length > 0) {
+    if (!confirm('Quit workout? Progress this session will be lost.')) return;
+  }
+  closeWorkout();
+}
+
+function closeWorkout() {
+  document.getElementById('workout-screen').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+// ═══════════════════════════════════════════════════
+// UI RENDERING
+// ═══════════════════════════════════════════════════
+function updateHomeUI() {
+  const h = new Date().getHours();
+  const greet = h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening';
+  document.getElementById('home-greeting').textContent = `${greet} 💪`;
+
+  const streak = calcStreak();
+  document.getElementById('streak-count').textContent = streak;
+  document.getElementById('total-pushups').textContent =
+    state.completedWorkouts.reduce((a,w) => a+w.total, 0).toLocaleString();
+  document.getElementById('total-workouts').textContent =
+    state.completedWorkouts.length;
+
+  renderWeekGrid();
+  renderDayRow();
+  renderSetsPreview();
+}
+
+function renderWeekGrid() {
+  const grid = document.getElementById('week-grid');
+  grid.innerHTML = PROGRAM.map((_, wi) => {
+    const done = isWeekDone(wi);
+    const current = wi === state.currentWeek;
+    const locked = wi > state.currentWeek;
+    let cls = locked ? 'locked' : done ? 'done' : current ? 'current' : '';
+    return `<div class="week-cell ${cls}" onclick="selectWeekPreview(${wi})">W${wi+1}</div>`;
+  }).join('');
+}
+
+let previewWeek = -1;
+function selectWeekPreview(wi) {
+  if (wi > state.currentWeek) return;
+  previewWeek = wi;
+  renderDayRow(wi);
+}
+
+function renderDayRow(forWeek) {
+  const wi = forWeek !== undefined ? forWeek : state.currentWeek;
+  const row = document.getElementById('day-row');
+  row.innerHTML = PROGRAM[wi].map((day, di) => {
+    const done = isWorkoutDone(wi, di);
+    const current = wi === state.currentWeek && di === state.currentDay;
+    const locked = wi > state.currentWeek || (wi === state.currentWeek && di > state.currentDay);
+    const totalReps = day.sets.reduce((a,b)=>a+b,0) + day.lastMin;
+    const numSets = day.sets.length + 1;
+    let cls = locked ? 'locked' : done ? 'done' : current ? 'current' : '';
+    return `<div class="day-cell ${cls}">
+      <div class="day-num">Day ${di+1}</div>
+      <div class="day-reps">${totalReps}+</div>
+      <div class="day-sets">${numSets} sets</div>
+    </div>`;
+  }).join('');
+}
+
+function renderSetsPreview() {
+  const wi = state.currentWeek;
+  const di = state.currentDay;
+  const day = PROGRAM[wi][di];
+  const preview = document.getElementById('sets-preview');
+  const all = [...day.sets, `${day.lastMin}+`];
+  preview.innerHTML = all.map((r, i) => `
+    <div style="background:var(--card2);border-radius:10px;padding:10px 14px;text-align:center;min-width:54px">
+      <div style="font-size:11px;color:var(--muted);font-weight:600">Set ${i+1}</div>
+      <div style="font-size:20px;font-weight:800;margin-top:2px">${r}</div>
+    </div>`).join('');
+}
+
+function updateStatsUI() {
+  const workouts = state.completedWorkouts;
+  const sessions = workouts.filter(w => w.week !== -1); // exclude migration entries
+  const total = workouts.reduce((a,w) => a+w.total, 0);
+  const best = sessions.reduce((a,w) => Math.max(a,w.total), 0);
+  const avg  = sessions.length ? Math.round(sessions.reduce((a,w)=>a+w.total,0) / sessions.length) : 0;
+  const totalDays = PROGRAM.length * PROGRAM[0].length;
+  const doneDays  = Math.min(totalDays, state.currentWeek * 3 + state.currentDay);
+
+  document.getElementById('s-total').textContent = total.toLocaleString();
+  document.getElementById('s-best').textContent = best;
+  document.getElementById('s-avg').textContent = avg;
+  document.getElementById('s-streak').textContent = state.bestStreak;
+
+  document.getElementById('progress-text').textContent =
+    `${doneDays} of ${totalDays} sessions completed`;
+  document.getElementById('progress-bar').style.width = `${(doneDays/totalDays)*100}%`;
+
+  renderAchievements(total, best, workouts.length, state.bestStreak);
+}
+
+const ACHIEVEMENTS = [
+  { icon:'🌟', name:'First Blood',  desc:'Complete your first workout', check: (t,b,n) => n >= 1 },
+  { icon:'🔥', name:'On Fire',      desc:'3-day streak',               check: (t,b,n,s) => s >= 3 },
+  { icon:'💪', name:'Century',      desc:'100 total pushups',          check: (t) => t >= 100 },
+  { icon:'🏃', name:'Week 1 Done',  desc:'Finish week 1',              check: (t,b,n) => n >= 3 },
+  { icon:'💯', name:'1K Club',      desc:'1,000 total pushups',        check: (t) => t >= 1000 },
+  { icon:'🦾', name:'Iron Arms',   desc:'50 in one session',          check: (t,b) => b >= 50 },
+  { icon:'👑', name:'Halfway',      desc:'Complete 9 sessions',        check: (t,b,n) => n >= 9 },
+  { icon:'🏆', name:'Champion',     desc:'Finish the full program',    check: (t,b,n) => n >= 18 },
+];
+
+function renderAchievements(total, best, count, streak) {
+  const grid = document.getElementById('achievements');
+  grid.innerHTML = ACHIEVEMENTS.map(a => {
+    const unlocked = a.check(total, best, count, streak);
+    return `<div class="achievement ${unlocked ? 'unlocked' : ''}">
+      <div class="ach-icon">${a.icon}</div>
+      <div class="ach-name">${a.name}</div>
+      <div class="ach-desc">${a.desc}</div>
+    </div>`;
+  }).join('');
+}
+
+function updateHistoryUI() {
+  const list = document.getElementById('history-list');
+  if (state.completedWorkouts.length === 0) {
+    list.innerHTML = `<div class="empty-state">
+      <div class="es-icon">📋</div>
+      <p>No workouts yet.<br>Complete your first session!</p>
+    </div>`;
+    return;
+  }
+  const sorted = [...state.completedWorkouts].reverse();
+  list.innerHTML = sorted.map(w => {
+    const d = new Date(w.date);
+    const ago = relativeTime(d);
+    const isMigLump   = w.week === -1;  // manual migration total
+    const isPuud      = w.week === -2;  // imported from .puud
+    const isSpecial   = isMigLump || isPuud;
+    return `<div class="history-item">
+      <div class="hi-dot" style="${isSpecial ? 'background:var(--accent);font-size:11px' : ''}">
+        ${isMigLump ? '→' : isPuud ? '📲' : `W${w.week+1}`}
+      </div>
+      <div class="hi-info">
+        <div class="hi-title">${
+          isMigLump ? 'Migrated from 100 Pushups' :
+          isPuud    ? 'From 100 Pushups app' :
+          `Week ${w.week+1} · Day ${w.day+1}`
+        }</div>
+        <div class="hi-sub">${ago}${w.sets && w.sets.length ? ` · Sets: ${w.sets.join(', ')}` : ''}</div>
+      </div>
+      <div class="hi-reps">${w.total}</div>
+    </div>`;
+  }).join('');
+}
+
+function updateSettingsUI() {
+  ['sound','vibrate','autoadvance'].forEach(k => {
+    document.getElementById(`toggle-${k}`).classList.toggle('on', !!state.settings[k]);
+  });
+  const current = state.settings.theme || 'system';
+  document.querySelectorAll('[data-theme-opt]').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.themeOpt === current);
+  });
+}
+
+// ═══════════════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════════════
+function isWorkoutDone(w, d) {
+  // A session counts as done if it's in history OR it's before the current position
+  // (the latter covers migrated progress where we don't have real history entries)
+  if (state.completedWorkouts.some(e => e.week === w && e.day === d)) return true;
+  if (w < state.currentWeek) return true;
+  if (w === state.currentWeek && d < state.currentDay) return true;
+  return false;
+}
+
+function isWeekDone(w) {
+  return [0,1,2].every(d => isWorkoutDone(w, d));
+}
+
+function calcStreak() {
+  if (state.completedWorkouts.length === 0) return 0;
+  const dates = state.completedWorkouts
+    .map(w => new Date(w.date).toDateString())
+    .filter((v,i,a) => a.indexOf(v) === i)
+    .map(s => new Date(s))
+    .sort((a,b) => b-a);
+
+  let streak = 0;
+  let check = new Date();
+  check.setHours(0,0,0,0);
+
+  for (const d of dates) {
+    d.setHours(0,0,0,0);
+    const diff = Math.round((check - d) / 86400000);
+    if (diff <= 1) { streak++; check = d; }
+    else break;
+  }
+  return streak;
+}
+
+function relativeTime(date) {
+  const diff = Date.now() - date.getTime();
+  const days = Math.floor(diff / 86400000);
+  if (days === 0) return 'Today';
+  if (days === 1) return 'Yesterday';
+  if (days < 7) return `${days} days ago`;
+  return date.toLocaleDateString();
+}
+
+function vibrate(pattern) {
+  if (state.settings.vibrate && navigator.vibrate) navigator.vibrate(pattern);
+}
+
+let audioCtx = null;
+function playBeep(success = false) {
+  if (!state.settings.sound) return;
+  try {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain); gain.connect(audioCtx.destination);
+    osc.frequency.value = success ? 880 : 440;
+    osc.type = 'sine';
+    gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + (success ? 0.6 : 0.3));
+    osc.start();
+    osc.stop(audioCtx.currentTime + (success ? 0.6 : 0.3));
+  } catch(e) {}
+}
+
+function showToast(msg, duration = 2500) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), duration);
+}
+
+// ═══════════════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════════════
+function switchTab(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById(`screen-${name}`).classList.add('active');
+  document.querySelector(`[data-tab="${name}"]`).classList.add('active');
+
+  if (name === 'home') updateHomeUI();
+  if (name === 'history') updateHistoryUI();
+  if (name === 'stats') updateStatsUI();
+  if (name === 'settings') updateSettingsUI();
+}
+
+// ═══════════════════════════════════════════════════
+// SETTINGS ACTIONS
+// ═══════════════════════════════════════════════════
+function toggleSetting(key) {
+  state.settings[key] = !state.settings[key];
+  saveState();
+  updateSettingsUI();
+}
+
+function exportData() {
+  const blob = new Blob([JSON.stringify(state, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `openpushups-backup-${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('Backup downloaded!');
+}
+
+function importData() {
+  document.getElementById('import-file').click();
+}
+
+function handleImport(evt) {
+  const file = evt.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const imported = JSON.parse(e.target.result);
+      if (typeof imported.currentWeek === 'undefined') throw new Error('invalid');
+      state = imported;
+      state.settings = Object.assign({ sound:true, vibrate:true, autoadvance:false, theme:'system' }, state.settings);
+      state.bestStreak = state.bestStreak || 0;
+      saveState();
+      switchTab('home');
+      showToast('Backup restored!');
+    } catch(err) {
+      showToast('Invalid backup file');
+    }
+  };
+  reader.readAsText(file);
+  evt.target.value = '';
+}
+
+// ═══════════════════════════════════════════════════
+// .PUUD IMPORT  (100 Pushups app backup format)
+// Format: ZIP containing Preference.data (JSON) + PushUps_Mos.db (SQLite)
+// ═══════════════════════════════════════════════════
+
+async function handlePuudImport(evt) {
+  const file = evt.target.files[0];
+  evt.target.value = '';
+  if (!file) return;
+  showToast('Reading backup…');
+  try {
+    const buf   = await file.arrayBuffer();
+    const parts = await unzipPuud(buf);
+    if (!parts['Preference.data'] || !parts['PushUps_Mos.db']) {
+      showToast('Not a valid .puud file'); return;
+    }
+    const prefs = JSON.parse(new TextDecoder().decode(parts['Preference.data']));
+    const rows  = readSQLiteTable(parts['PushUps_Mos.db'], 'PushUpsRecord');
+    applyPuudData(prefs, rows);
+  } catch(e) {
+    console.error('puud import error', e);
+    showToast('Import failed — see console');
+  }
+}
+
+// ── ZIP decompressor (deflate-raw via DecompressionStream) ───────────────────
+// Uses the central directory (end of file) for reliable compressed sizes;
+// local-header csize fields are unreliable when data descriptors are used.
+async function unzipPuud(buf) {
+  const b   = new Uint8Array(buf);
+  const le4 = (o) => b[o]+b[o+1]*256+b[o+2]*65536+b[o+3]*16777216;
+  const le2 = (o) => b[o]+b[o+1]*256;
+
+  // 1. Find End-of-Central-Directory record (PK\x05\x06) by scanning backwards
+  let eocd = b.length - 22;
+  while (eocd >= 0 && !(b[eocd]===0x50&&b[eocd+1]===0x4B&&b[eocd+2]===0x05&&b[eocd+3]===0x06)) eocd--;
+  if (eocd < 0) throw new Error('No EOCD found in .puud file');
+
+  const cdOff   = le4(eocd + 16); // offset of central directory
+  const cdCount = le2(eocd + 8);  // number of entries
+
+  // 2. Parse central directory entries (PK\x01\x02)
+  const out = {};
+  let p = cdOff;
+  for (let e = 0; e < cdCount; e++) {
+    if (b[p]!==0x50||b[p+1]!==0x4B||b[p+2]!==0x01||b[p+3]!==0x02) break;
+    const method     = le2(p+10);
+    const csize      = le4(p+20); // always reliable in central directory
+    const nameLen    = le2(p+28);
+    const cdExtraLen = le2(p+30);
+    const commentLen = le2(p+32);
+    const localOff   = le4(p+42);
+    const name       = new TextDecoder().decode(b.subarray(p+46, p+46+nameLen));
+    p += 46 + nameLen + cdExtraLen + commentLen;
+
+    // 3. Get actual data offset from the local file header at localOff
+    const lhExtraLen = le2(localOff + 28);
+    const lhNameLen  = le2(localOff + 26);
+    const dataStart  = localOff + 30 + lhNameLen + lhExtraLen;
+    const data       = b.subarray(dataStart, dataStart + csize);
+
+    if (method === 0) {
+      out[name] = data.slice();
+    } else if (method === 8) {
+      const ds = new DecompressionStream('deflate-raw');
+      const wr = ds.writable.getWriter();
+      wr.write(data); wr.close();
+      const chunks = [];
+      const rd = ds.readable.getReader();
+      for (;;) { const {done, value} = await rd.read(); if (done) break; chunks.push(value); }
+      const totalLen = chunks.reduce((a,c) => a+c.length, 0);
+      const out2 = new Uint8Array(totalLen);
+      let off = 0; for (const c of chunks) { out2.set(c, off); off += c.length; }
+      out[name] = out2;
+    }
+  }
+  return out;
+}
+
+// ── Minimal SQLite B-tree reader ─────────────────────────────────────────────
+// Reads a single table from a SQLite 3 database (Uint8Array).
+// Only handles INTEGER and TEXT columns, no overflow pages.
+function readSQLiteTable(db, tableName) {
+  if (!(db instanceof Uint8Array)) db = new Uint8Array(db.buffer ?? db);
+
+  if (new TextDecoder().decode(db.slice(0, 15)) !== 'SQLite format 3') return [];
+
+  const pgSz = db[16]*256 + db[17];
+  const pg   = n => db.subarray((n-1)*pgSz, n*pgSz);
+  const be2  = (a,o) => a[o]*256 + a[o+1];
+  const be4  = (a,o) => a[o]*16777216 + a[o+1]*65536 + a[o+2]*256 + a[o+3];
+
+  function vi(a, o) {           // SQLite varint → [value, nextOffset]
+    let v = 0;
+    for (let i = 0; i < 9; i++) {
+      const byte = a[o+i];
+      v = i < 8 ? v*128 + (byte&0x7F) : v*256 + byte;
+      if (!(byte & 0x80)) return [v, o+i+1];
+    }
+    return [v, o+9];
+  }
+
+  function readRec(a, o) {      // Decode a SQLite record starting at offset o
+    const [hSz, h0] = vi(a, o);
+    const hEnd = o + hSz;
+    const types = []; let p = h0;
+    while (p < hEnd) { const [t,np] = vi(a,p); types.push(t); p = np; }
+
+    const vals = []; let d = hEnd;
+    for (const t of types) {
+      if      (t===0)               { vals.push(null); }
+      else if (t===1)               { const v=a[d]; vals.push(v>=128?v-256:v); d+=1; }
+      else if (t===2)               { const v=be2(a,d); vals.push(v>=32768?v-65536:v); d+=2; }
+      else if (t===3)               { const v=a[d]*65536+a[d+1]*256+a[d+2]; vals.push(v>=8388608?v-16777216:v); d+=3; }
+      else if (t===4)               { const v=be4(a,d); vals.push(v>=2147483648?v-4294967296:v); d+=4; }
+      else if (t===5)               { d+=6; vals.push(0); }
+      else if (t===6||t===7)        { d+=8; vals.push(0); }
+      else if (t===8)               { vals.push(0); }
+      else if (t===9)               { vals.push(1); }
+      else if (t>=12 && t%2===0)    { d+=(t-12)/2; vals.push(null); }          // blob
+      else if (t>=13 && t%2===1)    { const l=(t-13)/2; vals.push(new TextDecoder().decode(a.slice(d,d+l))); d+=l; }
+    }
+    return vals;
+  }
+
+  function traverse(pn, hOff, rows) {
+    const p     = pg(pn);
+    const type  = p[hOff];
+    const nCell = be2(p, hOff+3);
+    const pBase = hOff + (type===0x05 ? 12 : 8);
+
+    if (type === 0x0D) {            // table leaf
+      for (let i = 0; i < nCell; i++) {
+        const co = be2(p, pBase+i*2);
+        let o = co;
+        [, o] = vi(p, o);           // skip payload length varint
+        const [rowid, o2] = vi(p, o);
+        rows.push({ rowid, vals: readRec(p, o2) });
+      }
+    } else if (type === 0x05) {     // table interior
+      const right = be4(p, hOff+8);
+      for (let i = 0; i < nCell; i++) traverse(be4(p, be2(p, pBase+i*2)), 0, rows);
+      traverse(right, 0, rows);
+    }
+  }
+
+  // sqlite_master lives on page 1 with a 100-byte file-header prefix
+  const master = [];
+  traverse(1, 100, master);
+
+  let rootPg = null;
+  for (const {vals} of master) {
+    if (vals[0]==='table' && vals[1]===tableName) { rootPg = vals[3]; break; }
+  }
+  if (!rootPg) return [];
+
+  const rows = [];
+  traverse(rootPg, 0, rows);
+  return rows.map(r => r.vals);
+}
+
+// ── Apply imported data to state ─────────────────────────────────────────────
+function applyPuudData(prefs, rows) {
+  // rows: [year, month, day, target, level, num, which]
+  // Count only which=3, num>0 (actual completed sets; skip plans, rests, tests)
+  const byDate = {};
+  for (const r of rows) {
+    if (!r || r.length < 8) continue;
+    const [, year, month, day, , , num, which] = r; // r[0] is NULL (_id rowid alias)
+    if ((which !== 3 && which !== 1) || !num || num <= 0) continue;
+    const key = `${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+    if (!byDate[key]) byDate[key] = { year, month, day, sets: [], total: 0 };
+    byDate[key].sets.push(num);
+    byDate[key].total += num;
+  }
+
+  const sessions = Object.values(byDate).sort(
+    (a,b) => new Date(a.year,a.month-1,a.day) - new Date(b.year,b.month-1,b.day)
+  );
+  if (!sessions.length) { showToast('No workout data found in backup'); return; }
+
+  // Deduplicate against existing history by date
+  const existing = new Set(
+    state.completedWorkouts.filter(w=>w.week>=0).map(w=>new Date(w.date).toDateString())
+  );
+  let added = 0;
+  for (const s of sessions) {
+    const d = new Date(s.year, s.month-1, s.day);
+    if (existing.has(d.toDateString())) continue;
+    state.completedWorkouts.push({
+      week: -2, day: -2,
+      date: d.toISOString(),
+      sets: s.sets,
+      total: s.total,
+    });
+    added++;
+  }
+
+  // Advance program position based on total session count (capped at 18)
+  const n = sessions.length;
+  state.currentWeek = Math.min(5, Math.floor(n / 3));
+  state.currentDay  = state.currentWeek < 5 ? n % 3 : 2;
+
+  // Mirror the app's sound setting
+  if (typeof prefs.Sound !== 'undefined') state.settings.sound = Boolean(prefs.Sound);
+
+  const streak = calcStreak();
+  if (streak > state.bestStreak) state.bestStreak = streak;
+  saveState();
+  switchTab('home');
+
+  const grandTotal = sessions.reduce((a,s) => a+s.total, 0);
+  showToast(`Imported ${added} sessions · ${grandTotal.toLocaleString()} pushups`);
+}
+
+// ═══════════════════════════════════════════════════
+// MIGRATION WIZARD
+// ═══════════════════════════════════════════════════
+let migSel = { week: 0, day: 0 }; // 0-based internally
+
+function openMigrationWizard() {
+  migSel.week = state.currentWeek;
+  migSel.day  = state.currentDay;
+  document.getElementById('mig-total').value = '';
+
+  buildMigWeekGrid();
+  buildMigDayGrid();
+  updateMigConfirmBtn();
+
+  document.getElementById('migrate-overlay').classList.add('open');
+}
+
+function closeMigrationWizard(e) {
+  if (e && e.target !== document.getElementById('migrate-overlay')) return;
+  document.getElementById('migrate-overlay').classList.remove('open');
+}
+
+function buildMigWeekGrid() {
+  document.getElementById('mig-week-grid').innerHTML = PROGRAM.map((_, wi) =>
+    `<button class="mig-btn ${wi === migSel.week ? 'sel' : ''}"
+       onclick="selectMigWeek(${wi})">W${wi+1}</button>`
+  ).join('');
+}
+
+function buildMigDayGrid() {
+  document.getElementById('mig-day-grid').innerHTML = [0,1,2].map(di =>
+    `<button class="mig-btn ${di === migSel.day ? 'sel' : ''}"
+       onclick="selectMigDay(${di})">Day ${di+1}</button>`
+  ).join('');
+}
+
+function selectMigWeek(wi) {
+  migSel.week = wi;
+  buildMigWeekGrid();
+  updateMigConfirmBtn();
+}
+
+function selectMigDay(di) {
+  migSel.day = di;
+  buildMigDayGrid();
+  updateMigConfirmBtn();
+}
+
+function updateMigConfirmBtn() {
+  document.getElementById('mig-confirm-btn').textContent =
+    `Continue from Week ${migSel.week+1}, Day ${migSel.day+1}`;
+}
+
+function applyMigration() {
+  const totalRaw = parseInt(document.getElementById('mig-total').value, 10);
+
+  state.currentWeek = migSel.week;
+  state.currentDay  = migSel.day;
+
+  // Add a single synthetic migration entry so the total pushup counter
+  // reflects the user's real effort, but don't fabricate per-session history
+  if (!isNaN(totalRaw) && totalRaw > 0) {
+    const alreadyCounted = state.completedWorkouts.reduce((a,w) => a+w.total, 0);
+    const migrationTotal = Math.max(0, totalRaw - alreadyCounted);
+    if (migrationTotal > 0) {
+      state.completedWorkouts.push({
+        week: -1, day: -1,        // sentinel: marks this as a migration entry
+        date: new Date().toISOString(),
+        sets: [], total: migrationTotal,
+        note: 'Migrated from 100 Pushups app',
+      });
+    }
+  }
+
+  saveState();
+  document.getElementById('migrate-overlay').classList.remove('open');
+  switchTab('home');
+  showToast(`Starting at Week ${migSel.week+1}, Day ${migSel.day+1}`);
+}
+
+function confirmReset() {
+  if (confirm('Reset ALL progress? This cannot be undone.')) {
+    state = {
+      currentWeek: 0, currentDay: 0,
+      completedWorkouts: [],
+      settings: state.settings,
+      bestStreak: 0
+    };
+    saveState();
+    switchTab('home');
+    showToast('Progress reset');
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// PWA – Service Worker via blob URL
+// ═══════════════════════════════════════════════════
+function registerSW() {
+  if (!('serviceWorker' in navigator)) return;
+  const code = `
+    const CACHE = 'openpushups-v1';
+    self.addEventListener('install', e => {
+      self.skipWaiting();
+    });
+    self.addEventListener('activate', e => {
+      e.waitUntil(self.clients.claim());
+    });
+    self.addEventListener('fetch', e => {
+      e.respondWith(fetch(e.request).catch(() => caches.match(e.request)));
+    });
+  `;
+  try {
+    const blob = new Blob([code], {type:'application/javascript'});
+    const url = URL.createObjectURL(blob);
+    navigator.serviceWorker.register(url).catch(() => {});
+  } catch(e) {}
+}
+
+// ═══════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════
+function init() {
+  loadState();
+  applyTheme(state.settings.theme || 'system');
+  registerSW();
+  updateHomeUI();
+
+  setTimeout(() => {
+    document.getElementById('splash').classList.add('hide');
+    setTimeout(() => document.getElementById('splash').remove(), 400);
+  }, 800);
+}
+
+init();
+</script>
+
+<!-- PWA Manifest inline -->
+<script>
+(function() {
+  const manifest = {
+    name: 'OpenPushups',
+    short_name: 'Pushups',
+    description: '100-pushup training program',
+    start_url: location.href,
+    display: 'standalone',
+    background_color: '#0f0f1a',
+    theme_color: '#0f0f1a',
+    icons: [
+      { src: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>", sizes: '192x192', type: 'image/svg+xml' }
+    ]
+  };
+  const blob = new Blob([JSON.stringify(manifest)], {type:'application/manifest+json'});
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('link');
+  link.rel = 'manifest'; link.href = url;
+  document.head.appendChild(link);
+})();
+</script>
+
+</body>
+</html>
