@@ -1,6 +1,6 @@
 # 💪 OpenPushups
 
-A free, open-source PWA that guides you through the classic 6-week, 100-pushup training program — no account, no server, works offline.
+A free, open-source PWA that guides you through the classic 6-week pushup training program — no account, no server, works offline.
 
 Built as a single HTML file. Open it in any browser, add it to your home screen, and go.
 
