@@ -1123,6 +1123,7 @@ function finishWorkout() {
   if (streak > state.bestStreak) state.bestStreak = streak;
 
   saveState();
+  autoBackup();
   closeWorkout();
   switchTab('home');
   updateHomeUI();
@@ -1396,14 +1397,20 @@ function toggleSetting(key) {
 }
 
 function exportData() {
-  const blob = new Blob([JSON.stringify(state, null, 2)], {type:'application/json'});
+  triggerDownload(JSON.stringify(state, null, 2), `openpushups-backup-${new Date().toISOString().slice(0,10)}.json`);
+  showToast('Backup downloaded!');
+}
+
+function autoBackup() {
+  triggerDownload(JSON.stringify(state), 'openpushups-backup.json');
+}
+
+function triggerDownload(text, filename) {
+  const blob = new Blob([text], {type:'application/json'});
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  a.href = url;
-  a.download = `openpushups-backup-${new Date().toISOString().slice(0,10)}.json`;
-  a.click();
+  a.href = url; a.download = filename; a.click();
   URL.revokeObjectURL(url);
-  showToast('Backup downloaded!');
 }
 
 function importData() {
