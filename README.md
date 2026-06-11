@@ -1,6 +1,6 @@
 # 💪 OpenPushups
 
-A free, open-source PWA pushup coach modeled on *Push Ups Workout* (`com.northpark.pushups`) — an initial test sets your level, then an adaptive plan across 6 levels takes over. No account, no server, works offline.
+A free, open-source PWA pushup coach modeled on *Push Ups Workout* (`com.northpark.pushups`) — an initial test sets your level, then an adaptive plan across 6 levels takes over. No account; progress is stored by a tiny bundled server so all your devices share one history.
 
 Built as a single HTML file. Open it in any browser, add it to your home screen, and go.
 
@@ -24,8 +24,8 @@ Built as a single HTML file. Open it in any browser, add it to your home screen,
 - **Tap-to-count ring** — tap the ring with a finger or your nose (phone face-up) to count each rep; auto-advances to rest when done
 - **Rest timer** — visual countdown ring between sets; skip or auto-advance
 - **Dark / Light / Auto theme** — follows system preference by default
-- **Offline** — service worker caches the app after the first load
-- **Local storage** — all progress saved on-device, nothing sent anywhere by default
+- **Offline** — service worker caches the app after the first load (saving progress requires the server to be reachable)
+- **Server storage** — progress lives in one JSON file on your own server (`data/data.json`), shared across devices; existing on-device data is migrated automatically on first load
 - **Export / Import** — back up and restore progress as JSON
 - **Publish stats to your website** (opt-in) — push an aggregate `stats.json` (streaks, totals, per-day rep counts — no per-session detail) to a GitHub Pages repo after each workout, using a fine-grained token stored only in your browser
 - **Migrate from Push Ups Workout (Google Play)** — import your existing progress via:
@@ -34,18 +34,17 @@ Built as a single HTML file. Open it in any browser, add it to your home screen,
 
 ## Usage
 
-**Option A — GitHub Pages / any web server**
-
-Open the URL in a mobile browser, then use *Add to Home Screen*.
-
-**Option B — local file**
-
-Download `index.html`, open it with your browser. On Android use a file manager that opens HTML files, or serve it locally:
+Run the bundled server (Python stdlib only, no dependencies) and open it in a mobile browser:
 
 ```bash
-python3 -m http.server 8080
-# then open http://localhost:8080
+docker compose up -d        # serves on port 8081
+# or without Docker:
+python3 server.py           # serves on port 8000
 ```
+
+Progress is stored in `data/data.json` next to the app (gitignored). To update a
+deployment, `git pull` (or run `update.sh`, e.g. from cron) — updates never touch
+the data directory.
 
 ## Migrating from the Push Ups Workout app
 
@@ -57,7 +56,7 @@ Alternatively use the manual wizard (**Settings → Migrate from Push Ups Workou
 
 ## Privacy
 
-Everything stays on your device. No analytics, no network requests except the initial page load. The service worker caches the app for offline use immediately after first visit.
+Everything stays on your own server. No analytics, no third-party requests — the app only talks to the host it was loaded from. The service worker caches the app for offline use immediately after first visit.
 
 ## License
 

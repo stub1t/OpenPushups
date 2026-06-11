@@ -14,8 +14,7 @@
   <script>
     (function() {
       try {
-        const s = JSON.parse(localStorage.getItem('openpushups_v1') || '{}');
-        const t = (s.settings && s.settings.theme) || 'system';
+        const t = localStorage.getItem('openpushups_theme') || 'system';
         document.documentElement.classList.add('theme-' + t);
       } catch(e) {
         document.documentElement.classList.add('theme-system');
@@ -923,16 +922,44 @@ function normalizeState() {
   state.bestStreak = state.bestStreak || 0;
 }
 
-function loadState() {
+// State lives on the server (GET/PUT /api/data). If the server cannot be
+// reached on load, saving is disabled so a blank state never overwrites it.
+let serverOk = false;
+
+async function loadState() {
   try {
-    const raw = localStorage.getItem('openpushups_v1');
-    if (raw) state = JSON.parse(raw);
-  } catch(e) { /* fresh state */ }
+    const res = await fetch('/api/data');
+    if (!res.ok) throw new Error(res.status);
+    const data = await res.json();
+    if (Object.keys(data).length) {
+      state = data;
+    } else {
+      // one-time migration of pre-server data stored in this browser
+      const raw = localStorage.getItem('openpushups_v1');
+      if (raw) state = JSON.parse(raw);
+    }
+    serverOk = true;
+  } catch(e) { /* server unreachable — keep defaults */ }
   normalizeState();
+  if (serverOk) {
+    try {
+      const res = await fetch('/api/data', { method:'PUT',
+        headers:{'Content-Type':'application/json'}, body: JSON.stringify(state) });
+      if (res.ok) localStorage.removeItem('openpushups_v1');
+    } catch(e) {}
+  } else {
+    showToast('Cannot reach server — progress will not be saved', 4000);
+  }
 }
 
 function saveState() {
-  localStorage.setItem('openpushups_v1', JSON.stringify(state));
+  // theme is cached locally so the pre-paint snippet can read it synchronously
+  try { localStorage.setItem('openpushups_theme', state.settings.theme || 'system'); } catch(e) {}
+  if (!serverOk) return;
+  fetch('/api/data', { method:'PUT', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify(state) })
+    .then(res => { if (!res.ok) throw new Error(res.status); })
+    .catch(() => showToast('Save failed — server unreachable'));
 }
 
 // ═══════════════════════════════════════════════════
@@ -2000,7 +2027,7 @@ function confirmReset() {
 function registerSW() {
   if (!('serviceWorker' in navigator)) return;
   const code = `
-    const CACHE = 'openpushups-v2';
+    const CACHE = 'openpushups-v3';
     self.addEventListener('install', e => {
       self.skipWaiting();
     });
@@ -2008,6 +2035,8 @@ function registerSW() {
       e.waitUntil(self.clients.claim());
     });
     self.addEventListener('fetch', e => {
+      // never cache or intercept data sync — the server is the source of truth
+      if (e.request.method !== 'GET' || new URL(e.request.url).pathname.startsWith('/api/')) return;
       e.respondWith(
         caches.open(CACHE).then(cache =>
           fetch(e.request).then(r => {
@@ -2028,8 +2057,8 @@ function registerSW() {
 // ═══════════════════════════════════════════════════
 // INIT
 // ═══════════════════════════════════════════════════
-function init() {
-  loadState();
+async function init() {
+  await loadState();
   applyTheme(state.settings.theme || 'system');
   registerSW();
   updateHomeUI();

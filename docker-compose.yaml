@@ -1,0 +1,12 @@
+services:
+  openpushups:
+    image: python:3-alpine
+    container_name: openpushups
+    restart: unless-stopped
+    working_dir: /app
+    command: python server.py
+    ports:
+      - "8081:8000"
+    volumes:
+      - .:/app:ro
+      - ./data:/app/data
