@@ -2,7 +2,7 @@
 
 A free, open-source PWA pushup coach modeled on *Push Ups Workout* (`com.northpark.pushups`) — an initial test sets your level, then an adaptive plan across 6 levels takes over. No account; progress is stored by a tiny bundled server so all your devices share one history.
 
-Built as a single HTML file. Open it in any browser, add it to your home screen, and go.
+Built as a single HTML file plus a tiny dependency-free Python server. Run it, open it in any browser, add it to your home screen, and go.
 
 ## Screenshots
 
