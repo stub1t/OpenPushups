@@ -1,13 +1,13 @@
 # 💪 OpenPushups
 
-A free, open-source PWA that guides you through the classic 6-week pushup training program — no account, no server, works offline.
+A free, open-source PWA pushup coach modeled on *Push Ups Workout* (`com.northpark.pushups`) — an initial test sets your level, then an adaptive plan across 6 levels takes over. No account, no server, works offline.
 
 Built as a single HTML file. Open it in any browser, add it to your home screen, and go.
 
 ## Screenshots
 
 <p align="center">
-  <img src="screenshots/home.png" width="200" alt="Home screen showing program progress and weekly schedule">
+  <img src="screenshots/home.png" width="200" alt="Home screen showing level progress and group schedule">
   <img src="screenshots/workout.png" width="200" alt="Workout screen with tap-to-count rep ring">
   <img src="screenshots/history.png" width="200" alt="History screen showing completed sessions">
 </p>
@@ -18,7 +18,9 @@ Built as a single HTML file. Open it in any browser, add it to your home screen,
 
 ## Features
 
-- **6-week program** — 3 days per week, progressive overload across 18 sessions
+- **Adaptive level program** — an initial max-effort test sets your starting level; 6 levels × 3 groups, and after each workout you rate it (*so hard / just right / so easy*) to move up or repeat
+- **Initial test** — one open-ended max set maps you to the right starting level
+- **Freestyle mode** — free push-up counting with no plan, logged to your history
 - **Tap-to-count ring** — tap the ring with a finger or your nose (phone face-up) to count each rep; auto-advances to rest when done
 - **Rest timer** — visual countdown ring between sets; skip or auto-advance
 - **Dark / Light / Auto theme** — follows system preference by default
@@ -26,7 +28,7 @@ Built as a single HTML file. Open it in any browser, add it to your home screen,
 - **Local storage** — all progress saved on-device, nothing sent anywhere
 - **Export / Import** — back up and restore progress as JSON
 - **Migrate from Push Ups Workout (Google Play)** — import your existing progress via:
-  - Manual wizard — pick your current week and day
+  - Manual wizard — pick your current level and group
   - Direct `.puud` file import — reads the app's backup file format (ZIP containing SQLite + JSON preferences), parsed entirely in the browser
 
 ## Usage
@@ -50,7 +52,7 @@ python3 -m http.server 8080
 2. In OpenPushups: **Settings → Import .puud Backup** — select the file
 3. Your full history and total rep count are imported automatically
 
-Alternatively use the manual wizard (**Settings → Migrate from Push Ups Workout**) to set your current week/day without a backup file.
+Alternatively use the manual wizard (**Settings → Migrate from Push Ups Workout**) to set your current level/group without a backup file.
 
 ## Privacy
 

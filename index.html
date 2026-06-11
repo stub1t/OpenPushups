@@ -182,36 +182,36 @@
     .btn-sm { padding: 10px 16px; font-size: 14px; width: auto; border-radius: 10px; }
 
     /* ── Home Screen ── */
-    .week-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; margin-bottom: 12px; }
-    .week-cell {
+    .level-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; margin-bottom: 12px; }
+    .level-cell {
       aspect-ratio: 1; border-radius: 10px; display: flex;
       align-items: center; justify-content: center;
       font-size: 11px; font-weight: 700;
       background: var(--card2); color: var(--muted); border: 1.5px solid transparent;
       cursor: pointer; transition: all .2s;
     }
-    .week-cell.done { background: var(--primary); color: #fff; border-color: var(--primary); }
-    .week-cell.current { border-color: var(--primary); color: var(--primary); }
-    .week-cell.locked { opacity: .35; cursor: default; }
+    .level-cell.done { background: var(--primary); color: #fff; border-color: var(--primary); }
+    .level-cell.current { border-color: var(--primary); color: var(--primary); }
+    .level-cell.locked { opacity: .35; cursor: default; }
 
-    .day-row {
+    .group-row {
       display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
       margin-bottom: 16px;
     }
-    .day-cell {
+    .group-cell {
       background: var(--card2); border-radius: 12px;
       padding: 14px 8px; text-align: center;
-      border: 1.5px solid transparent; cursor: pointer;
+      border: 1.5px solid transparent;
       transition: all .2s;
     }
-    .day-cell .day-num { font-size: 11px; color: var(--muted); font-weight: 600; }
-    .day-cell .day-reps { font-size: 20px; font-weight: 800; margin: 4px 0; }
-    .day-cell .day-sets { font-size: 11px; color: var(--muted); }
-    .day-cell.done { border-color: var(--success); }
-    .day-cell.done .day-reps { color: var(--success); }
-    .day-cell.current { border-color: var(--primary); }
-    .day-cell.current .day-reps { color: var(--primary); }
-    .day-cell.locked { opacity: .35; cursor: default; }
+    .group-cell .group-num { font-size: 11px; color: var(--muted); font-weight: 600; }
+    .group-cell .group-reps { font-size: 20px; font-weight: 800; margin: 4px 0; }
+    .group-cell .group-sets { font-size: 11px; color: var(--muted); }
+    .group-cell.done { border-color: var(--success); }
+    .group-cell.done .group-reps { color: var(--success); }
+    .group-cell.current { border-color: var(--primary); }
+    .group-cell.current .group-reps { color: var(--primary); }
+    .group-cell.locked { opacity: .35; }
 
     .stats-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
     .stat-mini {
@@ -300,9 +300,6 @@
     .rep-adj:active { background: var(--primary); }
 
     .workout-footer { padding: 16px 20px 32px; }
-    .rest-skip { background: none; border: none; color: var(--muted);
-      font-size: 13px; font-weight: 600; cursor: pointer;
-      display: block; width: 100%; text-align: center; padding: 12px; }
 
     /* Completion overlay */
     #workout-complete {
@@ -318,6 +315,19 @@
     .complete-sub { color: var(--muted); text-align: center; }
     .complete-reps { font-size: 56px; font-weight: 900; }
     .complete-reps-label { color: var(--muted); font-size: 14px; }
+
+    /* Post-workout difficulty feedback */
+    .diff-label { font-size: 13px; font-weight: 700; color: var(--muted);
+      text-align: center; margin-bottom: 10px; }
+    .diff-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+    .diff-btn {
+      display: flex; flex-direction: column; align-items: center; gap: 6px;
+      background: var(--card2); border: 1.5px solid var(--border);
+      border-radius: var(--radius); padding: 14px 6px; cursor: pointer;
+      color: var(--text); font-size: 24px; transition: all .15s;
+    }
+    .diff-btn span { font-size: 12px; font-weight: 700; color: var(--muted); }
+    .diff-btn:active { border-color: var(--primary); transform: scale(.97); }
 
     /* ── History Screen ── */
     .history-item {
@@ -427,8 +437,8 @@
     .migrate-label { font-size: 11px; font-weight: 700; text-transform: uppercase;
       letter-spacing: .8px; color: var(--muted); margin-bottom: 8px; }
 
-    .migrate-week-grid { display: grid; grid-template-columns: repeat(6,1fr); gap: 6px; margin-bottom: 18px; }
-    .migrate-day-grid  { display: grid; grid-template-columns: repeat(3,1fr);  gap: 8px; margin-bottom: 18px; }
+    .migrate-level-grid { display: grid; grid-template-columns: repeat(6,1fr); gap: 6px; margin-bottom: 18px; }
+    .migrate-group-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; margin-bottom: 18px; }
 
     .mig-btn {
       border: 1.5px solid var(--border); background: var(--card2);
@@ -494,11 +504,24 @@
         </div>
       </div>
 
-      <!-- Week selector -->
-      <div class="card">
-        <div class="card-label">6-Week Program</div>
-        <div class="week-grid" id="week-grid"></div>
-        <div class="day-row" id="day-row"></div>
+      <!-- Initial test prompt (shown until tested) -->
+      <div class="card" id="test-card" style="display:none">
+        <div class="card-label">Get Started</div>
+        <div style="font-size:16px;font-weight:800;margin:4px 0 6px">Take the initial test</div>
+        <div style="font-size:13px;color:var(--muted);margin-bottom:14px;line-height:1.5">
+          Do as many push-ups as you can in one set. We'll set your starting level from the result.
+        </div>
+        <button class="btn btn-primary" onclick="startOpenCounter('test')">
+          <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M8 5v14l11-7z"/></svg>
+          Start Initial Test
+        </button>
+      </div>
+
+      <!-- Level program (shown after test) -->
+      <div class="card" id="program-card">
+        <div class="card-label" id="level-label">Level 1 of 6</div>
+        <div class="level-grid" id="level-grid"></div>
+        <div class="group-row" id="group-row"></div>
         <button class="btn btn-primary" id="start-btn" onclick="startWorkout()">
           <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M8 5v14l11-7z"/></svg>
           Start Workout
@@ -509,6 +532,18 @@
       <div class="card" id="next-preview">
         <div class="card-label">Today's Sets</div>
         <div id="sets-preview" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px"></div>
+      </div>
+
+      <!-- Freestyle -->
+      <div class="card" id="freestyle-card">
+        <div class="card-label">Freestyle</div>
+        <div style="font-size:13px;color:var(--muted);margin:4px 0 14px;line-height:1.5">
+          Just count — no plan, no targets. Logged to your history.
+        </div>
+        <button class="btn btn-secondary" onclick="startOpenCounter('freestyle')">
+          <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M8 5v14l11-7z"/></svg>
+          Start Freestyle
+        </button>
       </div>
 
     </div>
@@ -589,7 +624,7 @@
         <div class="sr-title">Sound Effects</div>
         <div class="sr-sub">Beep when rest ends</div>
       </div>
-      <button class="toggle" id="toggle-sound" onclick="toggleSetting('sound')"></button>
+      <button class="toggle" id="toggle-sound" role="switch" aria-label="Sound effects" onclick="toggleSetting('sound')"></button>
     </div>
 
     <div class="setting-row">
@@ -597,7 +632,7 @@
         <div class="sr-title">Vibration</div>
         <div class="sr-sub">Haptic feedback</div>
       </div>
-      <button class="toggle" id="toggle-vibrate" onclick="toggleSetting('vibrate')"></button>
+      <button class="toggle" id="toggle-vibrate" role="switch" aria-label="Vibration" onclick="toggleSetting('vibrate')"></button>
     </div>
 
     <div class="setting-row">
@@ -605,7 +640,7 @@
         <div class="sr-title">Auto-advance sets</div>
         <div class="sr-sub">Skip rest screen after timer</div>
       </div>
-      <button class="toggle" id="toggle-autoadvance" onclick="toggleSetting('autoadvance')"></button>
+      <button class="toggle" id="toggle-autoadvance" role="switch" aria-label="Auto-advance sets" onclick="toggleSetting('autoadvance')"></button>
     </div>
 
     <div class="section-title">Data</div>
@@ -689,18 +724,16 @@
 <div id="workout-screen">
 
   <div id="workout-complete">
-    <div class="complete-icon">🎉</div>
-    <div class="complete-title">Workout Complete!</div>
+    <div class="complete-icon" id="complete-icon">🎉</div>
+    <div class="complete-title" id="complete-title">Workout Complete!</div>
     <div class="complete-reps" id="complete-total">0</div>
-    <div class="complete-reps-label">total pushups</div>
+    <div class="complete-reps-label" id="complete-total-label">total pushups</div>
     <div class="complete-sub" id="complete-sub"></div>
-    <div style="width:100%;margin-top:8px">
-      <button class="btn btn-success" onclick="finishWorkout()">Save & Continue</button>
-    </div>
+    <div id="complete-actions" style="width:100%;margin-top:8px"></div>
   </div>
 
   <div class="workout-header">
-    <button class="btn-icon" onclick="quitWorkout()">
+    <button class="btn-icon" onclick="quitWorkout()" aria-label="Quit workout">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
         <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
       </svg>
@@ -717,7 +750,7 @@
     <div class="set-label" id="set-label">Set 1 of 5</div>
     <div class="set-type" id="set-type-label"></div>
 
-    <div class="rep-ring-wrap" onclick="repTap()" title="Tap to count a rep">
+    <div class="rep-ring-wrap" onclick="repTap()" role="button" aria-label="Count one rep" title="Tap to count a rep">
       <svg class="rep-ring" viewBox="0 0 220 220">
         <circle class="rep-ring-bg" cx="110" cy="110" r="95"/>
         <circle class="rep-ring-fg" id="ring-fg" cx="110" cy="110" r="95"
@@ -731,15 +764,14 @@
 
     <!-- +/- for max set -->
     <div class="rep-controls" id="rep-controls" style="display:none">
-      <button class="rep-adj" onclick="adjustReps(-1)">−</button>
+      <button class="rep-adj" onclick="adjustReps(-1)" aria-label="Decrease reps">−</button>
       <div style="font-size:13px;color:var(--muted);font-weight:600">adjust reps</div>
-      <button class="rep-adj" onclick="adjustReps(1)">+</button>
+      <button class="rep-adj" onclick="adjustReps(1)" aria-label="Increase reps">+</button>
     </div>
   </div>
 
   <div class="workout-footer">
     <button class="btn btn-primary" id="action-btn" onclick="handleAction()">Done</button>
-    <button class="rest-skip" id="skip-btn" onclick="skipRest()" style="display:none">Skip rest</button>
   </div>
 </div>
 
@@ -750,18 +782,18 @@
     <div class="migrate-title">Migrate from Push Ups Workout</div>
     <div class="migrate-sub">Open your old app and pick up exactly where you left off. Your previous workouts were already done — just tell us your current position.</div>
 
-    <div class="migrate-label">Which week were you on?</div>
-    <div class="migrate-week-grid" id="mig-week-grid"></div>
+    <div class="migrate-label">Which level were you on?</div>
+    <div class="migrate-level-grid" id="mig-level-grid"></div>
 
-    <div class="migrate-label">Which day of that week?</div>
-    <div class="migrate-day-grid" id="mig-day-grid"></div>
+    <div class="migrate-label">Which group of that level?</div>
+    <div class="migrate-group-grid" id="mig-group-grid"></div>
 
     <div class="migrate-label">Approx. total pushups done (optional)</div>
     <input class="migrate-input" id="mig-total" type="number" min="0" inputmode="numeric"
       placeholder="e.g. 850">
 
     <button class="btn btn-primary" id="mig-confirm-btn" onclick="applyMigration()">
-      Continue from Week 1, Day 1
+      Continue from Level 1, Group 1
     </button>
   </div>
 </div>
@@ -771,53 +803,69 @@
 
 <script>
 // ═══════════════════════════════════════════════════
-// PROGRAM DATA  (6 weeks × 3 days)
-// Each day: { sets: number[], isLastMax: bool, lastMin: number, rest: seconds }
+// TRAINING MODEL  (mirrors com.northpark.pushups)
+// 6 levels × 3 groups, adaptive: an initial max-effort test sets the
+// starting level, and post-workout difficulty feedback moves you up/down.
 // ═══════════════════════════════════════════════════
 const RING_CIRCUMFERENCE = 596.9; // 2π × 95 (SVG circle r=95)
-const WEEK_MIGRATION   = -1;      // synthetic entry: manual migration lump sum
-const WEEK_PUUD_IMPORT = -2;      // synthetic entry: imported from .puud backup
+const WEEK_MIGRATION   = -1;      // legacy synthetic entry: manual migration lump sum
+const WEEK_PUUD_IMPORT = -2;      // legacy synthetic entry: imported from .puud backup
 
-const PROGRAM = [
-  [
-    { sets:[2,3,2,2], isLastMax:true, lastMin:3,  rest:60  },
-    { sets:[3,4,2,3], isLastMax:true, lastMin:4,  rest:60  },
-    { sets:[3,4,3,3], isLastMax:true, lastMin:5,  rest:60  },
-  ],
-  [
-    { sets:[5,6,4,4], isLastMax:true, lastMin:5,  rest:90  },
-    { sets:[6,8,4,4], isLastMax:true, lastMin:6,  rest:90  },
-    { sets:[6,9,5,5], isLastMax:true, lastMin:7,  rest:90  },
-  ],
-  [
-    { sets:[8,10,7,7],  isLastMax:true, lastMin:7,  rest:90  },
-    { sets:[9,11,8,7],  isLastMax:true, lastMin:8,  rest:90  },
-    { sets:[10,12,9,9], isLastMax:true, lastMin:9,  rest:120 },
-  ],
-  [
-    { sets:[11,13,9,9],   isLastMax:true, lastMin:10, rest:120 },
-    { sets:[12,14,11,10], isLastMax:true, lastMin:11, rest:120 },
-    { sets:[14,16,12,12], isLastMax:true, lastMin:13, rest:120 },
-  ],
-  [
-    { sets:[16,18,14,14], isLastMax:true, lastMin:15, rest:120 },
-    { sets:[18,20,15,15], isLastMax:true, lastMin:16, rest:120 },
-    { sets:[20,22,18,18], isLastMax:true, lastMin:18, rest:120 },
-  ],
-  [
-    { sets:[22,25,20,20], isLastMax:true, lastMin:22, rest:120 },
-    { sets:[25,28,22,22], isLastMax:true, lastMin:25, rest:120 },
-    { sets:[30,35,25,25], isLastMax:true, lastMin:35, rest:120 },
-  ],
-];
+const NUM_LEVELS       = 6;
+const GROUPS_PER_LEVEL = 3;
+const LEVEL_BASE = [4, 8, 14, 22, 32, 45];      // per-set baseline reps, per level
+const LEVEL_REST = [60, 75, 90, 100, 110, 120]; // rest seconds between sets, per level
+
+// Build the workout for a given level/group → { sets, lastMin, rest }.
+// 4 fixed sets + a final 'max' set; the group nudges difficulty up within a level.
+function buildWorkout(level, group) {
+  const base = LEVEL_BASE[level] + group * Math.ceil(LEVEL_BASE[level] * 0.20);
+  const sets = [
+    base,
+    base + Math.ceil(base * 0.25),
+    Math.ceil(base * 0.6),
+    Math.ceil(base * 0.6),
+    'max',
+  ];
+  return { sets, lastMin: base + 2, rest: LEVEL_REST[level] };
+}
+
+// Map an initial-test max-rep count to a starting level (0-based).
+function levelFromTestReps(n) {
+  if (n <= 5)  return 0;
+  if (n <= 10) return 1;
+  if (n <= 20) return 2;
+  if (n <= 30) return 3;
+  if (n <= 50) return 4;
+  return 5;
+}
+
+// Next position after a workout, from difficulty feedback.
+// hard → repeat group · ok → +1 group · easy → +2 groups (rolling into next level).
+function nextPosition(level, group, difficulty) {
+  const steps = difficulty === 'easy' ? 2 : difficulty === 'hard' ? 0 : 1;
+  const max   = NUM_LEVELS * GROUPS_PER_LEVEL - 1;
+  const total = Math.min(max, level * GROUPS_PER_LEVEL + group + steps);
+  return { level: Math.floor(total / GROUPS_PER_LEVEL), group: total % GROUPS_PER_LEVEL };
+}
+
+// Classify a history entry (handles new mode-tagged + legacy week/day entries).
+function entryKind(w) {
+  if (w.mode) return w.mode;
+  if (w.week === WEEK_MIGRATION)   return 'migration';
+  if (w.week === WEEK_PUUD_IMPORT) return 'puud';
+  return 'training';
+}
 
 // ═══════════════════════════════════════════════════
 // STATE
 // ═══════════════════════════════════════════════════
 let state = {
-  currentWeek: 0,
-  currentDay: 0,
-  completedWorkouts: [],   // [{week, day, date, sets, total}]
+  level: 0,
+  group: 0,
+  tested: false,
+  testReps: null,
+  completedWorkouts: [],   // [{mode, level, group, date, sets, total, difficulty}]
   settings: {
     sound: true,
     vibrate: true,
@@ -826,14 +874,30 @@ let state = {
   bestStreak: 0,
 };
 
+// Fill in defaults and migrate legacy week/day state → level/group.
+function normalizeState() {
+  if (typeof state.level === 'undefined' && typeof state.currentWeek !== 'undefined') {
+    state.level  = Math.min(NUM_LEVELS - 1, state.currentWeek || 0);
+    state.group  = Math.min(GROUPS_PER_LEVEL - 1, state.currentDay || 0);
+    state.tested = true;  // existing users keep their place — no re-test
+  }
+  delete state.currentWeek;
+  delete state.currentDay;
+  state.level    = state.level || 0;
+  state.group    = state.group || 0;
+  state.tested   = !!state.tested;
+  state.testReps = state.testReps ?? null;
+  state.completedWorkouts = state.completedWorkouts || [];
+  state.settings = Object.assign({ sound:true, vibrate:true, autoadvance:false, theme:'system' }, state.settings);
+  state.bestStreak = state.bestStreak || 0;
+}
+
 function loadState() {
   try {
     const raw = localStorage.getItem('openpushups_v1');
     if (raw) state = JSON.parse(raw);
-    // Ensure settings has all keys
-    state.settings = Object.assign({ sound:true, vibrate:true, autoadvance:false, theme:'system' }, state.settings);
-    state.bestStreak = state.bestStreak || 0;
   } catch(e) { /* fresh state */ }
+  normalizeState();
 }
 
 function saveState() {
@@ -872,114 +936,125 @@ window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () 
 // WORKOUT ENGINE
 // ═══════════════════════════════════════════════════
 let wk = {
-  weekIdx: 0, dayIdx: 0,
+  mode: 'training',   // 'training' | 'test' | 'freestyle'
+  level: 0, group: 0,
   sets: [],           // full set list (fixed + last max)
+  rest: 60,           // rest seconds for this workout
+  lastMin: 0,         // minimum for the final max set
   currentSetIdx: 0,
   repsLog: [],        // reps done per set
   currentMaxReps: 0,  // editable for max set
   repsRemaining: 0,   // countdown for current set
+  openCount: 0,       // count-up tally for test/freestyle modes
   phase: 'work',      // 'work' | 'rest' | 'done'
   restTimer: null,
   restRemaining: 0,
 };
 
-function getDaySets(w, d) {
-  const day = PROGRAM[w][d];
-  const allSets = [...day.sets];
-  if (day.isLastMax) allSets.push('max');
-  return allSets;
-}
-
-function startWorkout() {
-  wk.weekIdx = state.currentWeek;
-  wk.dayIdx = state.currentDay;
-
-  const day = PROGRAM[wk.weekIdx][wk.dayIdx];
-  wk.sets = getDaySets(wk.weekIdx, wk.dayIdx);
-  wk.currentSetIdx = 0;
-  wk.repsLog = [];
-  wk.phase = 'work';
-  wk.currentMaxReps = day.lastMin;
-  wk.repsRemaining = day.sets[0] !== undefined ? day.sets[0] : day.lastMin;
-
+function openWorkoutScreen() {
   document.getElementById('workout-complete').classList.remove('show');
   document.getElementById('workout-screen').classList.add('open');
   document.body.style.overflow = 'hidden';
+}
 
+function startWorkout() {
+  const w = buildWorkout(state.level, state.group);
+  Object.assign(wk, {
+    mode: 'training', level: state.level, group: state.group,
+    sets: w.sets, rest: w.rest, lastMin: w.lastMin,
+    currentSetIdx: 0, repsLog: [], phase: 'work',
+    currentMaxReps: w.lastMin, repsRemaining: w.sets[0],
+  });
+  openWorkoutScreen();
   renderWorkoutUI();
 }
 
+// Open-ended counter modes (initial test + freestyle).
+function startOpenCounter(mode) {
+  Object.assign(wk, { mode, sets: ['open'], currentSetIdx: 0,
+    repsLog: [], phase: 'work', openCount: 0, restTimer: null });
+  openWorkoutScreen();
+  renderWorkoutUI();
+}
+
+// Update the progress ring and its center readout.
+function updateRing(pct, value, label) {
+  document.getElementById('ring-fg').style.strokeDashoffset = RING_CIRCUMFERENCE * (1 - pct);
+  document.getElementById('rep-display').textContent = value;
+  document.getElementById('rep-label-text').textContent = label;
+}
+
 function renderWorkoutUI() {
-  const day = PROGRAM[wk.weekIdx][wk.dayIdx];
+  const isOpen = wk.mode === 'test' || wk.mode === 'freestyle';
   const totalSets = wk.sets.length;
   const idx = wk.currentSetIdx;
   const isMax = wk.sets[idx] === 'max';
   const isRest = wk.phase === 'rest';
 
   // Header
-  document.getElementById('workout-title-sub').textContent =
-    `Week ${wk.weekIdx+1} · Day ${wk.dayIdx+1}`;
-  document.getElementById('workout-title-main').textContent = isRest
-    ? 'Rest' : `Set ${idx+1} of ${totalSets}`;
+  const subEl = document.getElementById('workout-title-sub');
+  const mainEl = document.getElementById('workout-title-main');
+  if (wk.mode === 'test') {
+    subEl.textContent = 'Initial Test';
+    mainEl.textContent = 'Max effort';
+  } else if (wk.mode === 'freestyle') {
+    subEl.textContent = 'Freestyle';
+    mainEl.textContent = 'Count freely';
+  } else {
+    subEl.textContent = `Level ${wk.level+1} · Group ${wk.group+1}`;
+    mainEl.textContent = isRest ? 'Rest' : `Set ${idx+1} of ${totalSets}`;
+  }
 
-  // Pips
-  const pips = document.getElementById('set-pips');
-  pips.innerHTML = wk.sets.map((_, i) => {
+  // Pips (none for open-count modes)
+  document.getElementById('set-pips').innerHTML = isOpen ? '' : wk.sets.map((_, i) => {
     let cls = '';
     if (i < idx) cls = 'done';
     else if (i === idx) cls = 'current';
     return `<div class="set-pip ${cls}"></div>`;
   }).join('');
 
-  // Set label
-  document.getElementById('set-label').textContent = isRest
-    ? 'Rest Period' : `Set ${idx+1} of ${totalSets}`;
-  document.getElementById('set-type-label').textContent = isRest
-    ? ''
-    : isMax
-      ? `Min ${day.lastMin} · tap ring to count`
-      : 'Tap ring to count';
+  // Set label & type
+  document.getElementById('set-label').textContent = isOpen
+    ? (wk.mode === 'test' ? 'Do as many as you can' : 'Freestyle')
+    : isRest ? 'Rest Period' : `Set ${idx+1} of ${totalSets}`;
+  document.getElementById('set-type-label').textContent = isOpen
+    ? 'Tap ring to count'
+    : isRest ? ''
+      : isMax ? `Min ${wk.lastMin} · tap ring to count` : 'Tap ring to count';
 
   // Ring & number
-  const ring = document.getElementById('ring-fg');
-  const repDisplay = document.getElementById('rep-display');
-  const repLabel = document.getElementById('rep-label-text');
+  document.getElementById('ring-fg').classList.toggle('rest-mode', isRest);
 
-  ring.classList.toggle('rest-mode', isRest);
-
-  if (isRest) {
-    const pct = wk.restRemaining / day.rest;
-    ring.style.strokeDashoffset = RING_CIRCUMFERENCE * (1 - pct);
-    repDisplay.textContent = wk.restRemaining;
-    repLabel.textContent = 'seconds';
+  if (isOpen) {
+    updateRing(1, wk.openCount, 'reps');   // full ring; tally counts up
+  } else if (isRest) {
+    updateRing(wk.restRemaining / wk.rest, wk.restRemaining, 'seconds');
   } else {
     const total = isMax ? wk.currentMaxReps : wk.sets[idx];
-    const pct = total > 0 ? wk.repsRemaining / total : 0;
-    ring.style.strokeDashoffset = RING_CIRCUMFERENCE * (1 - pct);
-    repDisplay.textContent = wk.repsRemaining;
-    repLabel.textContent = wk.repsRemaining > 0 ? 'remaining' : 'done!';
+    updateRing(total > 0 ? wk.repsRemaining / total : 0,
+      wk.repsRemaining, wk.repsRemaining > 0 ? 'remaining' : 'done!');
   }
 
-  // Controls
-  const controls = document.getElementById('rep-controls');
-  controls.style.display = (isMax && !isRest) ? 'flex' : 'none';
+  // +/- controls (training max set only)
+  document.getElementById('rep-controls').style.display =
+    (isMax && !isRest && !isOpen) ? 'flex' : 'none';
 
   // Footer
   const actionBtn = document.getElementById('action-btn');
-  const skipBtn = document.getElementById('skip-btn');
-  if (isRest) {
+  if (isOpen) {
+    actionBtn.textContent = 'Finish';
+    actionBtn.className = 'btn btn-primary';
+  } else if (isRest) {
     actionBtn.textContent = 'Skip Rest';
     actionBtn.className = 'btn btn-secondary';
-    skipBtn.style.display = 'none';
   } else {
     actionBtn.textContent = idx === totalSets-1 ? 'Finish' : 'Done';
     actionBtn.className = 'btn btn-primary';
-    skipBtn.style.display = 'none';
   }
-
 }
 
 function handleAction() {
+  if (wk.mode === 'test' || wk.mode === 'freestyle') { showCompletion(); return; }
   if (wk.phase === 'rest') {
     skipRest();
   } else {
@@ -988,7 +1063,6 @@ function handleAction() {
 }
 
 function completeSet() {
-  const day = PROGRAM[wk.weekIdx][wk.dayIdx];
   const isMax = wk.sets[wk.currentSetIdx] === 'max';
   const reps = isMax ? wk.currentMaxReps : wk.sets[wk.currentSetIdx];
   wk.repsLog.push(reps);
@@ -998,7 +1072,7 @@ function completeSet() {
   if (wk.currentSetIdx < wk.sets.length - 1) {
     // Start rest
     wk.phase = 'rest';
-    wk.restRemaining = day.rest;
+    wk.restRemaining = wk.rest;
     startRestTimer();
   } else {
     // Workout done
@@ -1028,10 +1102,7 @@ function startRestTimer() {
 }
 
 function updateRestRing() {
-  const day = PROGRAM[wk.weekIdx][wk.dayIdx];
-  const pct = wk.restRemaining / day.rest;
-  document.getElementById('ring-fg').style.strokeDashoffset = RING_CIRCUMFERENCE * (1 - pct);
-  document.getElementById('rep-display').textContent = wk.restRemaining;
+  updateRing(wk.restRemaining / wk.rest, wk.restRemaining, 'seconds');
 }
 
 function skipRest() {
@@ -1042,11 +1113,10 @@ function skipRest() {
 function advanceSet() {
   wk.currentSetIdx++;
   wk.phase = 'work';
-  const day = PROGRAM[wk.weekIdx][wk.dayIdx];
   const s = wk.sets[wk.currentSetIdx];
   if (s === 'max') {
-    wk.currentMaxReps = day.lastMin;
-    wk.repsRemaining = day.lastMin;
+    wk.currentMaxReps = wk.lastMin;
+    wk.repsRemaining = wk.lastMin;
   } else {
     wk.repsRemaining = s;
   }
@@ -1056,14 +1126,21 @@ function advanceSet() {
 function adjustReps(delta) {
   wk.currentMaxReps = Math.max(1, wk.currentMaxReps + delta);
   wk.repsRemaining  = wk.currentMaxReps;
-  document.getElementById('ring-fg').style.strokeDashoffset = 0;
-  document.getElementById('rep-display').textContent = wk.repsRemaining;
-  document.getElementById('rep-label-text').textContent = 'remaining';
+  updateRing(1, wk.repsRemaining, 'remaining');
   vibrate([10]);
 }
 
 function repTap() {
   if (wk.phase !== 'work') return;
+
+  // Open-ended counter (test / freestyle): tally up, no target.
+  if (wk.mode === 'test' || wk.mode === 'freestyle') {
+    wk.openCount++;
+    vibrate([18]);
+    updateRing(1, wk.openCount, 'reps');
+    return;
+  }
+
   if (wk.repsRemaining <= 0) return;
 
   wk.repsRemaining--;
@@ -1071,11 +1148,8 @@ function repTap() {
 
   const isMax = wk.sets[wk.currentSetIdx] === 'max';
   const total = isMax ? wk.currentMaxReps : wk.sets[wk.currentSetIdx];
-  const pct = total > 0 ? wk.repsRemaining / total : 0;
-
-  document.getElementById('ring-fg').style.strokeDashoffset = RING_CIRCUMFERENCE * (1 - pct);
-  document.getElementById('rep-display').textContent = wk.repsRemaining;
-  document.getElementById('rep-label-text').textContent = wk.repsRemaining > 0 ? 'remaining' : 'done!';
+  updateRing(total > 0 ? wk.repsRemaining / total : 0,
+    wk.repsRemaining, wk.repsRemaining > 0 ? 'remaining' : 'done!');
 
   if (wk.repsRemaining === 0) {
     playBeep(false);
@@ -1086,48 +1160,94 @@ function repTap() {
 
 function showCompletion() {
   if (wk.restTimer) { clearInterval(wk.restTimer); wk.restTimer = null; }
-  const total = wk.repsLog.reduce((a,b) => a+b, 0);
-  document.getElementById('complete-total').textContent = total;
-  document.getElementById('complete-sub').textContent =
-    `Sets: ${wk.repsLog.join(' · ')}`;
+  const icon    = document.getElementById('complete-icon');
+  const title   = document.getElementById('complete-title');
+  const totalEl = document.getElementById('complete-total');
+  const label   = document.getElementById('complete-total-label');
+  const sub     = document.getElementById('complete-sub');
+  const actions = document.getElementById('complete-actions');
+
+  if (wk.mode === 'test') {
+    const reps = wk.openCount;
+    const lvl  = levelFromTestReps(reps);
+    icon.textContent = '✅';
+    title.textContent = 'Test Complete!';
+    totalEl.textContent = reps;
+    label.textContent = 'max pushups';
+    sub.textContent = `We'll start you at Level ${lvl+1}`;
+    actions.innerHTML = `<button class="btn btn-success" onclick="finishTest()">Start Level ${lvl+1}</button>`;
+  } else if (wk.mode === 'freestyle') {
+    icon.textContent = '🔥';
+    title.textContent = 'Freestyle Done!';
+    totalEl.textContent = wk.openCount;
+    label.textContent = 'total pushups';
+    sub.textContent = '';
+    actions.innerHTML = `<button class="btn btn-success" onclick="finishFreestyle()">Save</button>`;
+  } else {
+    const total = wk.repsLog.reduce((a,b) => a+b, 0);
+    icon.textContent = '🎉';
+    title.textContent = 'Workout Complete!';
+    totalEl.textContent = total;
+    label.textContent = 'total pushups';
+    sub.textContent = `Sets: ${wk.repsLog.join(' · ')}`;
+    actions.innerHTML = `
+      <div class="diff-label">How hard was that?</div>
+      <div class="diff-row">
+        <button class="diff-btn" onclick="finishWorkout('hard')">😣<span>So hard</span></button>
+        <button class="diff-btn" onclick="finishWorkout('ok')">🙂<span>Just right</span></button>
+        <button class="diff-btn" onclick="finishWorkout('easy')">😎<span>So easy</span></button>
+      </div>`;
+  }
+
   document.getElementById('workout-complete').classList.add('show');
   vibrate([100, 50, 100, 50, 200]);
   playBeep(true);
 }
 
-function finishWorkout() {
-  const total = wk.repsLog.reduce((a,b) => a+b, 0);
-  const entry = {
-    week: wk.weekIdx,
-    day: wk.dayIdx,
-    date: new Date().toISOString(),
-    sets: [...wk.repsLog],
-    total,
-  };
-  state.completedWorkouts.push(entry);
-
-  // Advance program
-  if (wk.dayIdx < 2) {
-    state.currentDay = wk.dayIdx + 1;
-  } else if (wk.weekIdx < 5) {
-    state.currentWeek = wk.weekIdx + 1;
-    state.currentDay = 0;
-  } else {
-    // Program complete!
-    state.currentWeek = 5;
-    state.currentDay = 2;
-  }
-
-  // Update best streak
+// Shared tail: update streak, persist, back up, return home.
+function postSave(msg) {
   const streak = calcStreak();
   if (streak > state.bestStreak) state.bestStreak = streak;
-
   saveState();
   autoBackup();
   closeWorkout();
   switchTab('home');
   updateHomeUI();
-  showToast(`💪 ${total} pushups saved!`);
+  showToast(msg);
+}
+
+function finishWorkout(difficulty) {
+  const total = wk.repsLog.reduce((a,b) => a+b, 0);
+  state.completedWorkouts.push({
+    mode: 'training', level: wk.level, group: wk.group,
+    date: new Date().toISOString(), sets: [...wk.repsLog], total, difficulty,
+  });
+  const np = nextPosition(wk.level, wk.group, difficulty);
+  state.level = np.level;
+  state.group = np.group;
+  postSave(`💪 ${total} pushups saved!`);
+}
+
+function finishTest() {
+  const reps = wk.openCount;
+  state.tested  = true;
+  state.testReps = reps;
+  state.level   = levelFromTestReps(reps);
+  state.group   = 0;
+  state.completedWorkouts.push({
+    mode: 'test', date: new Date().toISOString(), sets: [reps], total: reps,
+  });
+  postSave(`Level set to ${state.level+1}!`);
+}
+
+function finishFreestyle() {
+  const count = wk.openCount;
+  if (count > 0) {
+    state.completedWorkouts.push({
+      mode: 'freestyle', date: new Date().toISOString(), sets: [count], total: count,
+    });
+  }
+  postSave(count > 0 ? `🔥 ${count} pushups saved!` : 'No reps counted');
 }
 
 function quitWorkout() {
@@ -1158,53 +1278,58 @@ function updateHomeUI() {
   document.getElementById('total-workouts').textContent =
     state.completedWorkouts.length;
 
-  renderWeekGrid();
-  renderDayRow();
-  renderSetsPreview();
+  // Gate the plan behind the initial test
+  document.getElementById('test-card').style.display    = state.tested ? 'none' : 'block';
+  document.getElementById('program-card').style.display = state.tested ? 'block' : 'none';
+  document.getElementById('next-preview').style.display = state.tested ? 'block' : 'none';
+
+  if (state.tested) {
+    document.getElementById('level-label').textContent = `Level ${state.level+1} of ${NUM_LEVELS}`;
+    renderLevelGrid();
+    renderGroupRow();
+    renderSetsPreview();
+  }
 }
 
-function renderWeekGrid() {
-  const grid = document.getElementById('week-grid');
-  grid.innerHTML = PROGRAM.map((_, wi) => {
-    const done = isWeekDone(wi);
-    const current = wi === state.currentWeek;
-    const locked = wi > state.currentWeek;
+function renderLevelGrid() {
+  const grid = document.getElementById('level-grid');
+  grid.innerHTML = LEVEL_BASE.map((_, li) => {
+    const done = li < state.level;
+    const current = li === state.level;
+    const locked = li > state.level;
     let cls = locked ? 'locked' : done ? 'done' : current ? 'current' : '';
-    return `<div class="week-cell ${cls}" onclick="selectWeekPreview(${wi})">W${wi+1}</div>`;
+    return `<div class="level-cell ${cls}" onclick="selectLevelPreview(${li})">L${li+1}</div>`;
   }).join('');
 }
 
-let previewWeek = -1;
-function selectWeekPreview(wi) {
-  if (wi > state.currentWeek) return;
-  previewWeek = wi;
-  renderDayRow(wi);
+function selectLevelPreview(li) {
+  if (li > state.level) return;
+  renderGroupRow(li);
 }
 
-function renderDayRow(forWeek) {
-  const wi = forWeek !== undefined ? forWeek : state.currentWeek;
-  const row = document.getElementById('day-row');
-  row.innerHTML = PROGRAM[wi].map((day, di) => {
-    const done = isWorkoutDone(wi, di);
-    const current = wi === state.currentWeek && di === state.currentDay;
-    const locked = wi > state.currentWeek || (wi === state.currentWeek && di > state.currentDay);
-    const totalReps = day.sets.reduce((a,b)=>a+b,0) + day.lastMin;
-    const numSets = day.sets.length + 1;
+function renderGroupRow(forLevel) {
+  const li = forLevel !== undefined ? forLevel : state.level;
+  const row = document.getElementById('group-row');
+  row.innerHTML = [0,1,2].map(gi => {
+    const w = buildWorkout(li, gi);
+    const fixed = w.sets.filter(s => s !== 'max');
+    const totalReps = fixed.reduce((a,b)=>a+b,0) + w.lastMin;
+    const done = li < state.level || (li === state.level && gi < state.group);
+    const current = li === state.level && gi === state.group;
+    const locked = li > state.level || (li === state.level && gi > state.group);
     let cls = locked ? 'locked' : done ? 'done' : current ? 'current' : '';
-    return `<div class="day-cell ${cls}">
-      <div class="day-num">Day ${di+1}</div>
-      <div class="day-reps">${totalReps}+</div>
-      <div class="day-sets">${numSets} sets</div>
+    return `<div class="group-cell ${cls}">
+      <div class="group-num">Group ${gi+1}</div>
+      <div class="group-reps">${totalReps}+</div>
+      <div class="group-sets">${w.sets.length} sets</div>
     </div>`;
   }).join('');
 }
 
 function renderSetsPreview() {
-  const wi = state.currentWeek;
-  const di = state.currentDay;
-  const day = PROGRAM[wi][di];
+  const w = buildWorkout(state.level, state.group);
   const preview = document.getElementById('sets-preview');
-  const all = [...day.sets, `${day.lastMin}+`];
+  const all = w.sets.map(s => s === 'max' ? `${w.lastMin}+` : s);
   preview.innerHTML = all.map((r, i) => `
     <div style="background:var(--card2);border-radius:10px;padding:10px 14px;text-align:center;min-width:54px">
       <div style="font-size:11px;color:var(--muted);font-weight:600">Set ${i+1}</div>
@@ -1214,12 +1339,12 @@ function renderSetsPreview() {
 
 function updateStatsUI() {
   const workouts = state.completedWorkouts;
-  const sessions = workouts.filter(w => w.week !== WEEK_MIGRATION);
+  const sessions = workouts.filter(w => entryKind(w) !== 'migration');
   const total = workouts.reduce((a,w) => a+w.total, 0);
   const best = sessions.reduce((a,w) => Math.max(a,w.total), 0);
   const avg  = sessions.length ? Math.round(sessions.reduce((a,w)=>a+w.total,0) / sessions.length) : 0;
-  const totalDays = PROGRAM.length * PROGRAM[0].length;
-  const doneDays  = Math.min(totalDays, state.currentWeek * 3 + state.currentDay);
+  const totalUnits = NUM_LEVELS * GROUPS_PER_LEVEL;
+  const doneUnits  = Math.min(totalUnits, state.level * GROUPS_PER_LEVEL + state.group);
 
   document.getElementById('s-total').textContent = total.toLocaleString();
   document.getElementById('s-best').textContent = best;
@@ -1227,8 +1352,8 @@ function updateStatsUI() {
   document.getElementById('s-streak').textContent = state.bestStreak;
 
   document.getElementById('progress-text').textContent =
-    `${doneDays} of ${totalDays} sessions completed`;
-  document.getElementById('progress-bar').style.width = `${(doneDays/totalDays)*100}%`;
+    `Level ${state.level+1} of ${NUM_LEVELS} · ${doneUnits} of ${totalUnits} groups completed`;
+  document.getElementById('progress-bar').style.width = `${(doneUnits/totalUnits)*100}%`;
 
   renderAchievements(total, best, workouts.length, state.bestStreak);
 }
@@ -1237,7 +1362,7 @@ const ACHIEVEMENTS = [
   { icon:'🌟', name:'First Blood',  desc:'Complete your first workout', check: (t,b,n) => n >= 1 },
   { icon:'🔥', name:'On Fire',      desc:'3-day streak',               check: (t,b,n,s) => s >= 3 },
   { icon:'💪', name:'Century',      desc:'100 total pushups',          check: (t) => t >= 100 },
-  { icon:'🏃', name:'Week 1 Done',  desc:'Finish week 1',              check: (t,b,n) => n >= 3 },
+  { icon:'🏃', name:'Getting Strong', desc:'Finish 3 workouts',         check: (t,b,n) => n >= 3 },
   { icon:'💯', name:'1K Club',      desc:'1,000 total pushups',        check: (t) => t >= 1000 },
   { icon:'🦾', name:'Iron Arms',   desc:'50 in one session',          check: (t,b) => b >= 50 },
   { icon:'👑', name:'Halfway',      desc:'Complete 9 sessions',        check: (t,b,n) => n >= 9 },
@@ -1265,23 +1390,27 @@ function updateHistoryUI() {
     </div>`;
     return;
   }
-  const sorted = [...state.completedWorkouts].reverse();
+  const sorted = [...state.completedWorkouts].sort((a,b) => new Date(b.date) - new Date(a.date));
   list.innerHTML = sorted.map(w => {
-    const d = new Date(w.date);
-    const ago = relativeTime(d);
-    const isMigLump = w.week === WEEK_MIGRATION;
-    const isPuud    = w.week === WEEK_PUUD_IMPORT;
-    const isSpecial   = isMigLump || isPuud;
+    const ago = relativeTime(new Date(w.date));
+    const kind = entryKind(w);
+    const lvl = (w.level ?? w.week ?? 0) + 1;   // ?? falls back to legacy week/day
+    const grp = (w.group ?? w.day ?? 0) + 1;
+    const special = kind === 'migration' || kind === 'puud';
+    const dot = kind === 'migration' ? '→'
+              : kind === 'puud'      ? '📲'
+              : kind === 'freestyle' ? '🔥'
+              : kind === 'test'      ? '🧪'
+              : `L${lvl}`;
+    const title = kind === 'migration' ? 'Migrated from Push Ups Workout'
+                : kind === 'puud'      ? 'From Push Ups Workout'
+                : kind === 'freestyle' ? 'Freestyle'
+                : kind === 'test'      ? 'Initial test'
+                : `Level ${lvl} · Group ${grp}`;
     return `<div class="history-item">
-      <div class="hi-dot" style="${isSpecial ? 'background:var(--accent);font-size:11px' : ''}">
-        ${isMigLump ? '→' : isPuud ? '📲' : `W${w.week+1}`}
-      </div>
+      <div class="hi-dot" style="${special ? 'background:var(--accent);font-size:11px' : ''}">${dot}</div>
       <div class="hi-info">
-        <div class="hi-title">${
-          isMigLump ? 'Migrated from Push Ups Workout' :
-          isPuud    ? 'From Push Ups Workout' :
-          `Week ${w.week+1} · Day ${w.day+1}`
-        }</div>
+        <div class="hi-title">${title}</div>
         <div class="hi-sub">${ago}${w.sets && w.sets.length ? ` · Sets: ${w.sets.join(', ')}` : ''}</div>
       </div>
       <div class="hi-reps">${w.total}</div>
@@ -1291,7 +1420,9 @@ function updateHistoryUI() {
 
 function updateSettingsUI() {
   ['sound','vibrate','autoadvance'].forEach(k => {
-    document.getElementById(`toggle-${k}`).classList.toggle('on', !!state.settings[k]);
+    const el = document.getElementById(`toggle-${k}`);
+    el.classList.toggle('on', !!state.settings[k]);
+    el.setAttribute('aria-checked', !!state.settings[k]);
   });
   const current = state.settings.theme || 'system';
   document.querySelectorAll('[data-theme-opt]').forEach(btn => {
@@ -1302,18 +1433,6 @@ function updateSettingsUI() {
 // ═══════════════════════════════════════════════════
 // HELPERS
 // ═══════════════════════════════════════════════════
-function isWorkoutDone(w, d) {
-  // covers migrated progress where earlier sessions have no history entries
-  if (state.completedWorkouts.some(e => e.week === w && e.day === d)) return true;
-  if (w < state.currentWeek) return true;
-  if (w === state.currentWeek && d < state.currentDay) return true;
-  return false;
-}
-
-function isWeekDone(w) {
-  return [0,1,2].every(d => isWorkoutDone(w, d));
-}
-
 function calcStreak() {
   if (state.completedWorkouts.length === 0) return 0;
   const dates = state.completedWorkouts
@@ -1424,10 +1543,9 @@ function handleImport(evt) {
   reader.onload = (e) => {
     try {
       const imported = JSON.parse(e.target.result);
-      if (typeof imported.currentWeek === 'undefined') throw new Error('invalid');
+      if (!imported || !Array.isArray(imported.completedWorkouts)) throw new Error('invalid');
       state = imported;
-      state.settings = Object.assign({ sound:true, vibrate:true, autoadvance:false, theme:'system' }, state.settings);
-      state.bestStreak = state.bestStreak || 0;
+      normalizeState();   // also auto-maps legacy week/day backups
       saveState();
       switchTab('home');
       showToast('Backup restored!');
@@ -1620,16 +1738,20 @@ function applyPuudData(prefs, rows) {
   );
   if (!sessions.length) { showToast('No workout data found in backup'); return; }
 
-  // Deduplicate against existing history by date
+  // Deduplicate against existing real sessions by date
   const existing = new Set(
-    state.completedWorkouts.filter(w=>w.week>=0).map(w=>new Date(w.date).toDateString())
+    state.completedWorkouts
+      .filter(w => ['training','puud','freestyle'].includes(entryKind(w)))
+      .map(w => new Date(w.date).toDateString())
   );
   let added = 0;
+  let bestSet = 0;
   for (const s of sessions) {
+    bestSet = Math.max(bestSet, ...s.sets);
     const d = new Date(s.year, s.month-1, s.day);
     if (existing.has(d.toDateString())) continue;
     state.completedWorkouts.push({
-      week: WEEK_PUUD_IMPORT, day: WEEK_PUUD_IMPORT,
+      mode: 'puud',
       date: d.toISOString(),
       sets: s.sets,
       total: s.total,
@@ -1637,10 +1759,10 @@ function applyPuudData(prefs, rows) {
     added++;
   }
 
-  // Advance program position based on total session count (capped at 18)
-  const n = sessions.length;
-  state.currentWeek = Math.min(5, Math.floor(n / 3));
-  state.currentDay  = state.currentWeek < 5 ? n % 3 : 2;
+  // Seed starting level from the best single set in the backup
+  state.level  = levelFromTestReps(bestSet);
+  state.group  = 0;
+  state.tested = true;
 
   // Mirror the app's sound setting
   if (typeof prefs.Sound !== 'undefined') state.settings.sound = Boolean(prefs.Sound);
@@ -1657,15 +1779,15 @@ function applyPuudData(prefs, rows) {
 // ═══════════════════════════════════════════════════
 // MIGRATION WIZARD
 // ═══════════════════════════════════════════════════
-let migSel = { week: 0, day: 0 }; // 0-based internally
+let migSel = { level: 0, group: 0 }; // 0-based internally
 
 function openMigrationWizard() {
-  migSel.week = state.currentWeek;
-  migSel.day  = state.currentDay;
+  migSel.level = state.level;
+  migSel.group = state.group;
   document.getElementById('mig-total').value = '';
 
-  buildMigWeekGrid();
-  buildMigDayGrid();
+  buildMigLevelGrid();
+  buildMigGroupGrid();
   updateMigConfirmBtn();
 
   document.getElementById('migrate-overlay').classList.add('open');
@@ -1676,42 +1798,43 @@ function closeMigrationWizard(e) {
   document.getElementById('migrate-overlay').classList.remove('open');
 }
 
-function buildMigWeekGrid() {
-  document.getElementById('mig-week-grid').innerHTML = PROGRAM.map((_, wi) =>
-    `<button class="mig-btn ${wi === migSel.week ? 'sel' : ''}"
-       onclick="selectMigWeek(${wi})">W${wi+1}</button>`
+function buildMigLevelGrid() {
+  document.getElementById('mig-level-grid').innerHTML = LEVEL_BASE.map((_, li) =>
+    `<button class="mig-btn ${li === migSel.level ? 'sel' : ''}"
+       onclick="selectMigLevel(${li})">L${li+1}</button>`
   ).join('');
 }
 
-function buildMigDayGrid() {
-  document.getElementById('mig-day-grid').innerHTML = [0,1,2].map(di =>
-    `<button class="mig-btn ${di === migSel.day ? 'sel' : ''}"
-       onclick="selectMigDay(${di})">Day ${di+1}</button>`
+function buildMigGroupGrid() {
+  document.getElementById('mig-group-grid').innerHTML = [0,1,2].map(gi =>
+    `<button class="mig-btn ${gi === migSel.group ? 'sel' : ''}"
+       onclick="selectMigGroup(${gi})">Group ${gi+1}</button>`
   ).join('');
 }
 
-function selectMigWeek(wi) {
-  migSel.week = wi;
-  buildMigWeekGrid();
+function selectMigLevel(li) {
+  migSel.level = li;
+  buildMigLevelGrid();
   updateMigConfirmBtn();
 }
 
-function selectMigDay(di) {
-  migSel.day = di;
-  buildMigDayGrid();
+function selectMigGroup(gi) {
+  migSel.group = gi;
+  buildMigGroupGrid();
   updateMigConfirmBtn();
 }
 
 function updateMigConfirmBtn() {
   document.getElementById('mig-confirm-btn').textContent =
-    `Continue from Week ${migSel.week+1}, Day ${migSel.day+1}`;
+    `Continue from Level ${migSel.level+1}, Group ${migSel.group+1}`;
 }
 
 function applyMigration() {
   const totalRaw = parseInt(document.getElementById('mig-total').value, 10);
 
-  state.currentWeek = migSel.week;
-  state.currentDay  = migSel.day;
+  state.level  = migSel.level;
+  state.group  = migSel.group;
+  state.tested = true;   // a chosen level counts as set — no initial test needed
 
   // Add a single synthetic migration entry so the total pushup counter
   // reflects the user's real effort, but don't fabricate per-session history
@@ -1720,7 +1843,7 @@ function applyMigration() {
     const migrationTotal = Math.max(0, totalRaw - alreadyCounted);
     if (migrationTotal > 0) {
       state.completedWorkouts.push({
-        week: WEEK_MIGRATION, day: WEEK_MIGRATION,
+        mode: 'migration',
         date: new Date().toISOString(),
         sets: [], total: migrationTotal,
         note: 'Migrated from Push Ups Workout',
@@ -1731,13 +1854,13 @@ function applyMigration() {
   saveState();
   document.getElementById('migrate-overlay').classList.remove('open');
   switchTab('home');
-  showToast(`Starting at Week ${migSel.week+1}, Day ${migSel.day+1}`);
+  showToast(`Starting at Level ${migSel.level+1}, Group ${migSel.group+1}`);
 }
 
 function confirmReset() {
   if (confirm('Reset ALL progress? This cannot be undone.')) {
     state = {
-      currentWeek: 0, currentDay: 0,
+      level: 0, group: 0, tested: false, testReps: null,
       completedWorkouts: [],
       settings: state.settings,
       bestStreak: 0
@@ -1754,7 +1877,7 @@ function confirmReset() {
 function registerSW() {
   if (!('serviceWorker' in navigator)) return;
   const code = `
-    const CACHE = 'openpushups-v1';
+    const CACHE = 'openpushups-v2';
     self.addEventListener('install', e => {
       self.skipWaiting();
     });
