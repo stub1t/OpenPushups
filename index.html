@@ -688,6 +688,36 @@
     <input type="file" id="import-file" accept=".json" style="display:none" onchange="handleImport(event)">
     <input type="file" id="puud-file"   accept=".puud" style="display:none" onchange="handlePuudImport(event)">
 
+    <div class="section-title">Website</div>
+
+    <div class="setting-row">
+      <div class="sr-info">
+        <div class="sr-title">Publish stats to website</div>
+        <div class="sr-sub">Push streak &amp; totals after each workout</div>
+      </div>
+      <button class="toggle" id="toggle-publishStats" role="switch" aria-label="Publish stats to website" onclick="togglePublish()"></button>
+    </div>
+
+    <div class="setting-row" onclick="configurePublishing()" style="cursor:pointer">
+      <div class="sr-info">
+        <div class="sr-title">Publishing setup</div>
+        <div class="sr-sub" id="publish-config-sub">Not configured</div>
+      </div>
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>
+      </svg>
+    </div>
+
+    <div class="setting-row" onclick="publishStats(true)" style="cursor:pointer">
+      <div class="sr-info">
+        <div class="sr-title">Publish now</div>
+        <div class="sr-sub">Push current stats to the website</div>
+      </div>
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2.5">
+        <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+      </svg>
+    </div>
+
     <div class="section-title" style="color:#c0392b">Danger Zone</div>
 
     <button class="btn btn-danger" onclick="confirmReset()" style="margin-bottom:10px">
@@ -888,7 +918,8 @@ function normalizeState() {
   state.tested   = !!state.tested;
   state.testReps = state.testReps ?? null;
   state.completedWorkouts = state.completedWorkouts || [];
-  state.settings = Object.assign({ sound:true, vibrate:true, autoadvance:false, theme:'system' }, state.settings);
+  state.settings = Object.assign({ sound:true, vibrate:true, autoadvance:false, theme:'system',
+    publishStats:false, publishRepo:'' }, state.settings);
   state.bestStreak = state.bestStreak || 0;
 }
 
@@ -1204,12 +1235,13 @@ function showCompletion() {
   playBeep(true);
 }
 
-// Shared tail: update streak, persist, back up, return home.
+// Shared tail: update streak, persist, back up, publish, return home.
 function postSave(msg) {
   const streak = calcStreak();
   if (streak > state.bestStreak) state.bestStreak = streak;
   saveState();
   autoBackup();
+  if (state.settings.publishStats) publishStats();
   closeWorkout();
   switchTab('home');
   updateHomeUI();
@@ -1419,11 +1451,15 @@ function updateHistoryUI() {
 }
 
 function updateSettingsUI() {
-  ['sound','vibrate','autoadvance'].forEach(k => {
+  ['sound','vibrate','autoadvance','publishStats'].forEach(k => {
     const el = document.getElementById(`toggle-${k}`);
     el.classList.toggle('on', !!state.settings[k]);
     el.setAttribute('aria-checked', !!state.settings[k]);
   });
+  document.getElementById('publish-config-sub').textContent =
+    state.settings.publishRepo && localStorage.getItem(GH_TOKEN_KEY)
+      ? `Publishing to ${state.settings.publishRepo}`
+      : 'Set GitHub repo & token';
   const current = state.settings.theme || 'system';
   document.querySelectorAll('[data-theme-opt]').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.themeOpt === current);
@@ -1555,6 +1591,95 @@ function handleImport(evt) {
   };
   reader.readAsText(file);
   evt.target.value = '';
+}
+
+// ═══════════════════════════════════════════════════
+// WEBSITE PUBLISHING
+// Pushes an aggregate stats.json (streaks, totals, per-day rep counts —
+// no per-session detail) to a GitHub Pages repo via the contents API.
+// The token lives in its own localStorage key so it is never included
+// in state exports or auto-backups.
+// ═══════════════════════════════════════════════════
+const GH_TOKEN_KEY  = 'openpushups_gh_token';
+const PUBLISH_PATH  = 'pushups/stats.json';
+
+function buildPublicStats() {
+  const workouts = state.completedWorkouts;
+  const sessions = workouts.filter(w => entryKind(w) !== 'migration');
+  const days = {};
+  for (const w of sessions) {
+    const key = w.date.slice(0, 10);
+    days[key] = (days[key] || 0) + w.total;
+  }
+  return {
+    updated: new Date().toISOString(),
+    currentStreak: calcStreak(),
+    bestStreak: state.bestStreak,
+    totalPushups: workouts.reduce((a,w) => a+w.total, 0),
+    totalWorkouts: sessions.length,
+    bestWorkout: sessions.reduce((a,w) => Math.max(a, w.total), 0),
+    level: state.level + 1,
+    group: state.group + 1,
+    days,
+  };
+}
+
+function configurePublishing() {
+  const repo = prompt('GitHub repo to publish to (owner/repo):',
+    state.settings.publishRepo || 'stub1t/stub1t.github.io');
+  if (!repo) return false;
+  const token = prompt('Fine-grained GitHub token (contents: read & write on that repo):',
+    localStorage.getItem(GH_TOKEN_KEY) || '');
+  if (!token) return false;
+  state.settings.publishRepo = repo.trim();
+  localStorage.setItem(GH_TOKEN_KEY, token.trim());
+  saveState();
+  updateSettingsUI();
+  showToast('Publishing configured');
+  return true;
+}
+
+function togglePublish() {
+  if (!state.settings.publishStats) {
+    const configured = state.settings.publishRepo && localStorage.getItem(GH_TOKEN_KEY);
+    if (!configured && !configurePublishing()) return;
+  }
+  toggleSetting('publishStats');
+}
+
+async function publishStats(manual = false) {
+  const token = localStorage.getItem(GH_TOKEN_KEY);
+  const repo  = state.settings.publishRepo;
+  if (!token || !repo) {
+    if (manual) showToast('Configure publishing first');
+    return;
+  }
+  try {
+    const api = `https://api.github.com/repos/${repo}/contents/${PUBLISH_PATH}`;
+    const headers = {
+      Authorization: `Bearer ${token}`,
+      Accept: 'application/vnd.github+json',
+    };
+    let sha;
+    const cur = await fetch(api, { headers });
+    if (cur.ok) sha = (await cur.json()).sha;
+
+    const json = JSON.stringify(buildPublicStats(), null, 2);
+    const res = await fetch(api, {
+      method: 'PUT',
+      headers,
+      body: JSON.stringify({
+        message: 'Update pushup stats',
+        content: btoa(unescape(encodeURIComponent(json))),
+        ...(sha && { sha }),
+      }),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    if (manual) showToast('Stats published!');
+  } catch (e) {
+    console.error('publish error', e);
+    showToast('Publishing stats failed');
+  }
 }
 
 // ═══════════════════════════════════════════════════

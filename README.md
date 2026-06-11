@@ -25,8 +25,9 @@ Built as a single HTML file. Open it in any browser, add it to your home screen,
 - **Rest timer** — visual countdown ring between sets; skip or auto-advance
 - **Dark / Light / Auto theme** — follows system preference by default
 - **Offline** — service worker caches the app after the first load
-- **Local storage** — all progress saved on-device, nothing sent anywhere
+- **Local storage** — all progress saved on-device, nothing sent anywhere by default
 - **Export / Import** — back up and restore progress as JSON
+- **Publish stats to your website** (opt-in) — push an aggregate `stats.json` (streaks, totals, per-day rep counts — no per-session detail) to a GitHub Pages repo after each workout, using a fine-grained token stored only in your browser
 - **Migrate from Push Ups Workout (Google Play)** — import your existing progress via:
   - Manual wizard — pick your current level and group
   - Direct `.puud` file import — reads the app's backup file format (ZIP containing SQLite + JSON preferences), parsed entirely in the browser
