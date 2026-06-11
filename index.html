@@ -1618,8 +1618,6 @@ function buildPublicStats() {
     totalPushups: workouts.reduce((a,w) => a+w.total, 0),
     totalWorkouts: sessions.length,
     bestWorkout: sessions.reduce((a,w) => Math.max(a, w.total), 0),
-    level: state.level + 1,
-    group: state.group + 1,
     days,
   };
 }
