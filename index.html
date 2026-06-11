@@ -1262,12 +1262,11 @@ function showCompletion() {
   playBeep(true);
 }
 
-// Shared tail: update streak, persist, back up, publish, return home.
+// Shared tail: update streak, persist, publish, return home.
 function postSave(msg) {
   const streak = calcStreak();
   if (streak > state.bestStreak) state.bestStreak = streak;
   saveState();
-  autoBackup();
   if (state.settings.publishStats) publishStats();
   closeWorkout();
   switchTab('home');
@@ -1583,10 +1582,6 @@ function exportData() {
   showToast('Backup downloaded!');
 }
 
-function autoBackup() {
-  triggerDownload(JSON.stringify(state), 'openpushups-backup.json');
-}
-
 function triggerDownload(text, filename) {
   const blob = new Blob([text], {type:'application/json'});
   const url = URL.createObjectURL(blob);
@@ -1625,7 +1620,7 @@ function handleImport(evt) {
 // Pushes an aggregate stats.json (streaks, totals, per-day rep counts —
 // no per-session detail) to a GitHub Pages repo via the contents API.
 // The token lives in its own localStorage key so it is never included
-// in state exports or auto-backups.
+// in state exports or the server-stored state.
 // ═══════════════════════════════════════════════════
 const GH_TOKEN_KEY  = 'openpushups_gh_token';
 const PUBLISH_PATH  = 'pushups/stats.json';
