@@ -27,7 +27,6 @@ Built as a single HTML file plus a tiny dependency-free Python server. Run it, o
 - **Offline** — service worker caches the app after the first load (saving progress requires the server to be reachable)
 - **Server storage** — progress lives in one JSON file on your own server (`data/data.json`), shared across devices; existing on-device data is migrated automatically on first load
 - **Export / Import** — back up and restore progress as JSON
-- **Publish stats to your website** (opt-in) — push an aggregate `stats.json` (streaks, totals, per-day rep counts — no per-session detail) to a GitHub Pages repo after each workout, using a fine-grained token stored only in your browser
 - **Migrate from Push Ups Workout (Google Play)** — import your existing progress via:
   - Manual wizard — pick your current level and group
   - Direct `.puud` file import — reads the app's backup file format (ZIP containing SQLite + JSON preferences), parsed entirely in the browser
